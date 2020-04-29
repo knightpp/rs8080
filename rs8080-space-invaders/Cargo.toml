@@ -1,0 +1,16 @@
+[package]
+name = "rs8080-space-invaders"
+version = "0.1.0"
+authors = ["Danil <knightpp@pm.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sdl2={version ="0.34.0", features = ["bundled"]}
+rs8080-emulator = {path = "../rs8080-emulator"}
+
+
+[profile.release]
+lto = "yes"
+codegen-units = 1
