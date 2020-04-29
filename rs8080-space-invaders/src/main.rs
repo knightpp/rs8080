@@ -144,15 +144,15 @@ enum Test {
 }
 
 pub fn main() {
-    let emu = RS8080::new(Box::new(SpaceInvadersIO::new()));
+    let emu = Arc::new(Mutex::new(RS8080::new(Box::new(SpaceInvadersIO::new()))));
     let h = include_bytes!("../../roms/invaders.h");
     let g = include_bytes!("../../roms/invaders.g");
     let f = include_bytes!("../../roms/invaders.f");
     let e = include_bytes!("../../roms/invaders.e");
-    emu.load_to_mem(h, 0);
-    emu.load_to_mem(g, 0x0800);
-    emu.load_to_mem(f, 0x1000);
-    emu.load_to_mem(e, 0x1800);
+    emu.lock().unwrap().load_to_mem(h, 0);
+    emu.lock().unwrap().load_to_mem(g, 0x0800);
+    emu.lock().unwrap().load_to_mem(f, 0x1000);
+    emu.lock().unwrap().load_to_mem(e, 0x1800);
     let (sn, rx) = mpsc::channel();
 
     let sdl_context = sdl2::init().unwrap();
@@ -179,21 +179,27 @@ pub fn main() {
             // 2 MHz = 2 * 10^6 Hz
             if let Ok(Test::Int(x)) = rx.try_recv() {
                 emu2.lock().unwrap().generate_int(x as u16);
+                //println!("{}", emu2.lock().unwrap());
             } else {
                 emu2.lock().unwrap().emulate_next();
+                //println!("{}", emu2.lock().unwrap());
             }
             thread::sleep(Duration::from_secs_f64(1f64 / (10f64.powf(6f64))));
         }
     });
     let mut event_pump = sdl_context.event_pump().unwrap();
-    thread::sleep(Duration::from_millis(500));
+
+    canvas.set_draw_color(Color::MAGENTA);
+    canvas.present();
+    
+    //thread::sleep(Duration::from_millis(500));
     'running: loop {
         //for _ in event_pump.poll_iter(){}
 
         draw_space_invaders_vram(
             &mut canvas,
             &mut texture,
-            emu.lock().unwrap().get_mem_slice(0x2400..0x3FFF),
+            &emu.lock().unwrap().get_mem_slice(0x2400..0x3FFF).to_owned(),
         );
         for event in event_pump.poll_iter() {
             match event {
@@ -232,9 +238,11 @@ pub fn main() {
                 _ => {}
             }
         }
-
-        sn.send(Test::Int(0x8)).unwrap();
-        sn.send(Test::Int(0x10)).unwrap();
+        if emu.lock().unwrap().int_enabled(){
+            sn.send(Test::Int(0x8)).unwrap();
+            sn.send(Test::Int(0x10)).unwrap();
+        }
+        
 
         thread::sleep(Duration::from_secs_f64(1f64 / 60f64));
 
