@@ -17,7 +17,7 @@ impl OverflowMath for u8 {
     }
 
     fn sub_carry(&mut self, rhs: Self::RHS) -> bool {
-        let carry =  *self < rhs;
+        let carry = *self < rhs;
         *self = self.wrapping_sub(rhs);
         carry
     }
@@ -39,7 +39,7 @@ impl OverflowMath for u16 {
     }
 
     fn sub_carry(&mut self, rhs: Self::RHS) -> bool {
-        let carry =  *self < rhs;
+        let carry = *self < rhs;
         *self = self.wrapping_sub(rhs);
         carry
     }

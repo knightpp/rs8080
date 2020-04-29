@@ -1,4 +1,4 @@
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub(crate) struct TwoU8 {
     pub(crate) hi: u8,
     pub(crate) lo: u8,
@@ -10,9 +10,9 @@ impl TwoU8 {
     }
 }
 
-impl From<TwoU8> for usize{
+impl From<TwoU8> for usize {
     fn from(x: TwoU8) -> Self {
-        let x : u16 = x.into();
+        let x: u16 = x.into();
         x as usize
     }
 }
@@ -26,7 +26,7 @@ impl From<u16> for TwoU8 {
     }
 }
 
-impl From<TwoU8> for u16{
+impl From<TwoU8> for u16 {
     fn from(x: TwoU8) -> Self {
         ((x.hi as u16) << 8) | x.lo as u16
     }

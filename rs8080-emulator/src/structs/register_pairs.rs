@@ -1,7 +1,6 @@
-use crate::structs::{TwoU8};
-use crate::traits::{OverflowMath, HiPart};
+use crate::structs::TwoU8;
+use crate::traits::{HiPart, OverflowMath};
 use std::ops::{AddAssign, SubAssign};
-
 
 fn merge(lo: u8, hi: u8) -> u16 {
     TwoU8 { lo, hi }.into()
@@ -24,7 +23,6 @@ macro_rules! impl_ops {
                 self.$lo = (val) as u8;
             }
         }
-
 
         impl $struct_name {
             pub(crate) fn get_twou8(&self) -> TwoU8 {
@@ -52,16 +50,18 @@ macro_rules! impl_ops {
                 TwoU8 {
                     lo: x.$lo,
                     hi: x.$hi,
-                }.into()
+                }
+                .into()
             }
         }
 
-        impl From<$struct_name> for u16{
-            fn from(x : $struct_name) -> u16{
-                TwoU8{
+        impl From<$struct_name> for u16 {
+            fn from(x: $struct_name) -> u16 {
+                TwoU8 {
                     lo: x.$lo,
-                    hi: x.$hi
-                }.into()
+                    hi: x.$hi,
+                }
+                .into()
             }
         }
         impl From<u16> for $struct_name {
@@ -73,7 +73,7 @@ macro_rules! impl_ops {
             }
         }
 
-        impl OverflowMath for $struct_name{
+        impl OverflowMath for $struct_name {
             type RHS = u16;
 
             fn add_carry(&mut self, rhs: Self::RHS) -> bool {
@@ -88,18 +88,16 @@ macro_rules! impl_ops {
                 val < rhs
             }
 
-            fn add_un(&mut self, rhs: Self::RHS) {
+            fn add_un(&mut self, _rhs: Self::RHS) {
                 unimplemented!()
             }
 
-            fn sub_un(&mut self, rhs: Self::RHS) {
+            fn sub_un(&mut self, _rhs: Self::RHS) {
                 unimplemented!()
             }
         }
-
     };
 }
-
 
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct BC {
@@ -120,7 +118,3 @@ pub(crate) struct HL {
 impl_ops!(BC, b, c);
 impl_ops!(DE, d, e);
 impl_ops!(HL, h, l);
-
-
-
-

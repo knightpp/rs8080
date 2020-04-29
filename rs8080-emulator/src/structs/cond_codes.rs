@@ -13,18 +13,16 @@ pub(crate) struct ConditionalCodes {
     pub(crate) ac: bool,
 }
 
-
-
 impl Display for ConditionalCodes {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         macro_rules! flagify {
-        ($name:ident) => {
-            if self.$name {
-                stringify!($name)
-            } else {
-                "."
-            }
-        };
+            ($name:ident) => {
+                if self.$name {
+                    stringify!($name)
+                } else {
+                    "."
+                }
+            };
         }
         write!(
             f,
@@ -55,8 +53,7 @@ impl ConditionalCodes {
 
     /// #Registers affected
     /// Z, S, P, CY
-    pub fn set_cmp(&mut self, lhs: u8, rhs: u8)
-    {
+    pub fn set_cmp(&mut self, lhs: u8, rhs: u8) {
         let x = lhs.wrapping_sub(rhs);
         self.z = lhs == rhs;
         self.cy = lhs < rhs;

@@ -1,16 +1,19 @@
-use crate::structs::{BC, DE, HL, ConditionalCodes, TwoU8};
+use crate::structs::{ConditionalCodes, TwoU8, BC, DE, HL};
 use crate::traits::{DataBus, OverflowMath};
 use std::fmt::{self, Formatter};
 extern crate rs8080_disassembler as disasm;
-use disasm::{ disassemble,Command};
-use crate::traits::{WriteAction, MemLimiter};
+use crate::traits::{MemLimiter, WriteAction};
+use disasm::{disassemble, Command};
 
-pub(crate) struct AllowAll{}
-impl MemLimiter for AllowAll{
-    fn check_write(&self, adr : u16, to_write_byte : u8) -> WriteAction { WriteAction::Allow }
-    fn check_read(&self, adr : u16, read_byte : u8) -> u8 { read_byte }
+pub(crate) struct AllowAll {}
+impl MemLimiter for AllowAll {
+    fn check_write(&self, _: u16, _: u8) -> WriteAction {
+        WriteAction::Allow
+    }
+    fn check_read(&self, _: u16, read_byte: u8) -> u8 {
+        read_byte
+    }
 }
-
 
 /// Intel 8080
 pub struct RS8080 {
@@ -28,8 +31,8 @@ pub struct RS8080 {
     cc: ConditionalCodes,
     /// Interrupts enabled
     int_enable: bool,
-    io_device: Box<dyn DataBus>,
-    mem_limiter: Box<dyn MemLimiter>,
+    io_device: Box<dyn DataBus + Send + Sync>,
+    mem_limiter: Box<dyn MemLimiter + Send + Sync>,
 }
 
 impl fmt::Display for RS8080 {
@@ -53,13 +56,12 @@ impl fmt::Display for RS8080 {
 }
 
 impl RS8080 {
-
     #[inline]
-    pub fn get_mem_slice(&self, r:std::ops::Range<usize>) -> &[u8]{
+    pub fn get_mem_slice(&self, r: std::ops::Range<usize>) -> &[u8] {
         &self.mem[r]
     }
 
-    pub fn new(io_device : Box<dyn DataBus>) -> RS8080 {
+    pub fn new(io_device: Box<dyn DataBus + Send + Sync>) -> RS8080 {
         RS8080 {
             a: 0,
             bc: BC { b: 0, c: 0 },
@@ -77,31 +79,31 @@ impl RS8080 {
             },
             int_enable: false,
             io_device: io_device,
-            mem_limiter: Box::new(AllowAll{}),
+            mem_limiter: Box::new(AllowAll {}),
         }
     }
 
-    pub fn set_mem_limiter(&mut self, new_mem_limiter : Box<dyn MemLimiter>){
+    pub fn set_mem_limiter(&mut self, new_mem_limiter: Box<dyn MemLimiter + Send + Sync>) {
         self.mem_limiter = new_mem_limiter;
     }
 
-    pub fn get_io_mut(&mut self) -> &mut Box<dyn DataBus>{
+    pub fn get_io_mut(&mut self) -> &mut Box<dyn DataBus + Send + Sync> {
         &mut self.io_device
     }
 
     #[inline(always)]
-    pub fn get_mut_mem(&mut self) -> &mut [u8]{
+    pub fn get_mut_mem(&mut self) -> &mut [u8] {
         &mut self.mem
     }
     #[inline(always)]
-    pub fn get_mem(&self) -> &[u8]{
+    pub fn get_mem(&self) -> &[u8] {
         &self.mem
     }
     /// # Panics
     /// length of slice > mem
     #[inline]
-    pub fn load_to_mem(&mut self, slice: &[u8], offset : u16) {
-        if slice.len() > self.mem.len(){
+    pub fn load_to_mem(&mut self, slice: &[u8], offset: u16) {
+        if slice.len() > self.mem.len() {
             panic!("input was too large for emulated memory (max 0xFFFF)");
         }
         self.mem[offset as usize..(slice.len() + offset as usize)].copy_from_slice(slice);
@@ -111,11 +113,11 @@ impl RS8080 {
     }
 
     #[inline]
-    pub fn disassemble_next(&self) -> Command{
-        disassemble(&self.mem[self.pc as usize ..])
+    pub fn disassemble_next(&self) -> Command {
+        disassemble(&self.mem[self.pc as usize..])
     }
 
-    pub fn emulate_next(&mut self){
+    pub fn emulate_next(&mut self) {
         //let cmd = disassemble(&self.mem[self.pc as usize..]);
         //self.pc as usize + 3
         let mem_from_pc = &self.mem[self.pc as usize..];
@@ -123,7 +125,7 @@ impl RS8080 {
         match *mem_from_pc {
             [0x0, ..] => {}
             [0x01, lo, hi, ..] => {
-                self.bc.set(TwoU8{lo,hi});
+                self.bc.set(TwoU8 { lo, hi });
                 self.pc += 2;
             }
             [0x02, ..] => {
@@ -243,11 +245,11 @@ impl RS8080 {
 
             [0x20, ..] => {}
             [0x21, lo, hi, ..] => {
-                self.hl.set(TwoU8{lo,hi});
+                self.hl.set(TwoU8 { lo, hi });
                 self.pc += 2;
             }
             [0x22, lo, hi, ..] => {
-                let adr : u16 = TwoU8{lo,hi}.into();
+                let adr: u16 = TwoU8 { lo, hi }.into();
                 self.write_mem(adr, self.hl.l);
                 self.write_mem(adr + 1, self.hl.h);
                 self.pc += 2;
@@ -279,7 +281,7 @@ impl RS8080 {
                 self.cc.cy = carry;
             }
             [0x2A, lo, hi, ..] => {
-                let adr : u16 = TwoU8{lo,hi}.into();
+                let adr: u16 = TwoU8 { lo, hi }.into();
                 self.hl.l = self.read_mem(adr);
                 self.hl.h = self.read_mem(adr + 1);
                 self.pc += 2;
@@ -306,11 +308,11 @@ impl RS8080 {
 
             [0x30, ..] => {}
             [0x31, lo, hi, ..] => {
-                self.sp = TwoU8{lo, hi}.into();
+                self.sp = TwoU8 { lo, hi }.into();
                 self.pc += 2;
             }
             [0x32, lo, hi, ..] => {
-                self.write_mem(TwoU8{lo,hi}, self.a);
+                self.write_mem(TwoU8 { lo, hi }, self.a);
                 self.pc += 2;
             }
             [0x33, ..] => {
@@ -341,7 +343,7 @@ impl RS8080 {
                 self.cc.cy = carry;
             }
             [0x3A, lo, hi, ..] => {
-                self.a = self.read_mem(TwoU8{lo,hi});
+                self.a = self.read_mem(TwoU8 { lo, hi });
                 self.pc += 2;
             }
             [0x3B, ..] => {
@@ -815,7 +817,7 @@ impl RS8080 {
                 self.cc.cy = false;
             }
             [0xAE, ..] => {
-                self.a ^=self.read_mem(self.hl);
+                self.a ^= self.read_mem(self.hl);
                 self.cc.set_zspac(self.a);
                 self.cc.cy = false;
             }
@@ -884,8 +886,7 @@ impl RS8080 {
                 self.cc.set_cmp(self.a, self.hl.l);
             }
             [0xBE, ..] => {
-                self.cc
-                    .set_cmp(self.a, self.read_mem(self.hl));
+                self.cc.set_cmp(self.a, self.read_mem(self.hl));
             }
             [0xBF, ..] => {
                 self.cc.set_cmp(self.a, self.a);
@@ -903,18 +904,18 @@ impl RS8080 {
             // JNZ
             [0xC2, lo, hi, ..] => {
                 if !self.cc.z {
-                    self.pc = TwoU8{lo, hi}.into();
+                    self.pc = TwoU8 { lo, hi }.into();
                 } else {
                     self.pc += 2;
                 }
             }
             [0xC3, lo, hi, ..] => {
-                self.pc = TwoU8{lo, hi}.into();
+                self.pc = TwoU8 { lo, hi }.into();
             }
             [0xC4, lo, hi, ..] => {
                 self.pc += 2;
                 if !self.cc.z {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xC5, ..] => {
@@ -939,22 +940,21 @@ impl RS8080 {
             // JZ
             [0xCA, lo, hi, ..] => {
                 if self.cc.z {
-                    self.pc = TwoU8{lo, hi}.into();
-                }else{
+                    self.pc = TwoU8 { lo, hi }.into();
+                } else {
                     self.pc += 2;
                 }
-
             }
             [0xCB, ..] => {}
             [0xCC, lo, hi, ..] => {
                 self.pc += 2;
                 if self.cc.z {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xCD, lo, hi, ..] => {
                 self.pc.add_un(2);
-                self.call(TwoU8{lo, hi}.into());
+                self.call(TwoU8 { lo, hi }.into());
                 //code to show messages from cpudiag.bin program
                 // let d16 : u16 = TwoU8{lo, hi}.into();
                 // if d16 == 5{
@@ -971,7 +971,7 @@ impl RS8080 {
                 //             println!("{}", str);
                 //         }
                 //         std::process::exit(-1);
-                      
+
                 //     }else if self.bc.c == 2{
                 //         println!("print char routine called");
                 //     }
@@ -1005,11 +1005,10 @@ impl RS8080 {
             // JNC
             [0xD2, lo, hi, ..] => {
                 if !self.cc.cy {
-                    self.pc = TwoU8{lo, hi}.into();
-                }else{
+                    self.pc = TwoU8 { lo, hi }.into();
+                } else {
                     self.pc += 2;
                 }
-
             }
             [0xD3, d8, ..] => {
                 // special, OUT
@@ -1019,7 +1018,7 @@ impl RS8080 {
             [0xD4, lo, hi, ..] => {
                 self.pc.add_un(2);
                 if !self.cc.cy {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xD5, ..] => {
@@ -1043,11 +1042,10 @@ impl RS8080 {
             // JC
             [0xDA, lo, hi, ..] => {
                 if self.cc.cy {
-                    self.pc = TwoU8{lo, hi}.into();
-                }else{
+                    self.pc = TwoU8 { lo, hi }.into();
+                } else {
                     self.pc += 2;
                 }
-
             }
             [0xDB, d8, ..] => {
                 // special, IN
@@ -1057,7 +1055,7 @@ impl RS8080 {
             [0xDC, lo, hi, ..] => {
                 self.pc += 2;
                 if self.cc.cy {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xDD, ..] => {}
@@ -1084,7 +1082,7 @@ impl RS8080 {
             // JPO
             [0xE2, lo, hi, ..] => {
                 if !self.cc.p {
-                    self.pc = TwoU8{lo, hi}.into();
+                    self.pc = TwoU8 { lo, hi }.into();
                 } else {
                     self.pc += 2;
                 }
@@ -1097,7 +1095,7 @@ impl RS8080 {
             [0xE4, lo, hi, ..] => {
                 self.pc += 2;
                 if !self.cc.p {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xE5, ..] => {
@@ -1123,7 +1121,7 @@ impl RS8080 {
             // JPE
             [0xEA, lo, hi, ..] => {
                 if self.cc.p {
-                    self.pc = TwoU8{lo, hi}.into();
+                    self.pc = TwoU8 { lo, hi }.into();
                 } else {
                     self.pc += 2;
                 }
@@ -1136,7 +1134,7 @@ impl RS8080 {
             [0xEC, lo, hi, ..] => {
                 self.pc += 2;
                 if self.cc.p {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xED, ..] => {}
@@ -1171,7 +1169,7 @@ impl RS8080 {
             // JP
             [0xF2, lo, hi, ..] => {
                 if !self.cc.s {
-                    self.pc = TwoU8{lo, hi}.into();
+                    self.pc = TwoU8 { lo, hi }.into();
                 } else {
                     self.pc += 2;
                 }
@@ -1184,7 +1182,7 @@ impl RS8080 {
             [0xF4, lo, hi, ..] => {
                 self.pc += 2;
                 if !self.cc.s {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xF5, ..] => {
@@ -1222,7 +1220,7 @@ impl RS8080 {
             [0xFA, lo, hi, ..] => {
                 self.pc += 2;
                 if self.cc.s {
-                    self.pc = TwoU8{lo, hi}.into();
+                    self.pc = TwoU8 { lo, hi }.into();
                 }
             }
             [0xFB, ..] => {
@@ -1232,7 +1230,7 @@ impl RS8080 {
             [0xFC, lo, hi, ..] => {
                 self.pc += 2;
                 if self.cc.s {
-                    self.call(TwoU8{lo, hi}.into());
+                    self.call(TwoU8 { lo, hi }.into());
                 }
             }
             [0xFD, ..] => {}
@@ -1252,33 +1250,33 @@ impl RS8080 {
     }
 
     #[inline(always)]
-    pub fn get_pc(&self) -> u16{
+    pub fn get_pc(&self) -> u16 {
         self.pc
     }
 
-    fn read_mem(&self, adr : impl Into<usize> + Copy) -> u8{
-        let adr : usize = adr.into();
+    fn read_mem(&self, adr: impl Into<usize> + Copy) -> u8 {
+        let adr: usize = adr.into();
         self.mem_limiter.check_read(adr as u16, self.mem[adr])
     }
 
-    fn write_mem(&mut self, adr : impl Into<usize> + Copy, value : u8){
-        let adr : usize = adr.into();
+    fn write_mem(&mut self, adr: impl Into<usize> + Copy, value: u8) {
+        let adr: usize = adr.into();
         let action = self.mem_limiter.check_write(adr as u16, value);
         match action {
-            WriteAction::Allow => {self.mem[adr] = value}
-             WriteAction::NewByte(b) => {self.mem[adr] = b}
-             WriteAction::Ignore => {}
+            WriteAction::Allow => self.mem[adr] = value,
+            WriteAction::NewByte(b) => self.mem[adr] = b,
+            WriteAction::Ignore => {}
         }
-    }
-    
-    #[inline]
-    pub fn generate_interrupt(&mut self, interrupt_num : u16){
-        self.int_enable = false;
-        self.call(8*interrupt_num);
     }
 
     #[inline]
-    pub fn generate_int(&mut self, adr : u16){
+    pub fn generate_interrupt(&mut self, interrupt_num: u16) {
+        self.int_enable = false;
+        self.call(8 * interrupt_num);
+    }
+
+    #[inline]
+    pub fn generate_int(&mut self, adr: u16) {
         self.int_enable = false;
         self.call(adr);
     }
@@ -1298,7 +1296,7 @@ impl RS8080 {
 
     fn push(&mut self, data: TwoU8) {
         //let t : u16 = data.into();
-       // println!("PUSH: data={:04X}", t);
+        // println!("PUSH: data={:04X}", t);
 
         self.write_mem(self.sp - 1, data.hi);
         self.write_mem(self.sp - 2, data.lo);
@@ -1311,7 +1309,7 @@ impl RS8080 {
     }
 
     #[inline]
-    pub fn int_enabled(&self) -> bool{
+    pub fn int_enabled(&self) -> bool {
         self.int_enable
     }
 }

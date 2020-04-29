@@ -1,5 +1,3 @@
-
-
 pub(crate) trait FlagHelpers {
     /// ***Z (zero)*** set to 1 when the result is equal
     /// to zero
@@ -10,7 +8,6 @@ pub(crate) trait FlagHelpers {
     /// ***P (parity)*** is set when the answer has even parity,
     /// clear when odd parity
     fn parity(&self) -> bool;
-
 
     // /// ***CY (carry)*** set to 1 when the instruction resulted
     // /// in a carry out or borrow into the high order bit
@@ -54,7 +51,7 @@ impl FlagHelpers for u16 {
     }
 
     fn parity(&self) -> bool {
-       self.count_ones() % 2 == 0
+        self.count_ones() % 2 == 0
     }
     // fn parity(&self) -> bool {
     //     *self % 2 == 0
@@ -85,5 +82,5 @@ mod tests {
 
         assert_eq!(true, 0b1100_1100u16.parity());
         assert_eq!(false, 0b0001_1100u16.parity());
-     }
+    }
 }
