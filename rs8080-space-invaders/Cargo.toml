@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 sdl2={version ="0.34.0", features = ["bundled"]}
 rs8080-emulator = {path = "../rs8080-emulator"}
-crossbeam = "0.7.3"
 
 [profile.release]
 lto = "yes"
