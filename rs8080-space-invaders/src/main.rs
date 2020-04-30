@@ -126,12 +126,11 @@ pub fn draw_space_invaders_vram(canvas: &mut WindowCanvas, tex: &mut Texture, vr
             }
         }
     }
-    //  tex.with_lock(None, |buf, pitch|{
-    //     buf.copy_from_slice(&data[..buf.len()]);
-    //  }).unwrap();
-
     let t: Vec<_> = slice.iter().flat_map(|x| x.to_vec()).collect();
-    tex.update(None, &t, 224).unwrap();
+     tex.with_lock(None, |buf, pitch|{
+        buf.copy_from_slice(&t);
+     }).unwrap();
+    //tex.update(None, &t, 224).unwrap();
     canvas.copy(&tex, None, None).unwrap();
 }
 
@@ -145,6 +144,7 @@ pub fn main() {
     emu.load_to_mem(g, 0x0800);
     emu.load_to_mem(f, 0x1000);
     emu.load_to_mem(e, 0x1800);
+    emu.set_mem_limiter(Box::new(SpaceInvadersLimit{}));
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
