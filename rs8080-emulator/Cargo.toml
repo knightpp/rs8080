@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 rs8080-disassembler = { path = "../rs8080-disassembler"}
+derive_more = "0.99.0"
