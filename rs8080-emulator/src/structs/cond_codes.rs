@@ -2,11 +2,18 @@ use std::fmt::{self, Display, Formatter};
 use crate::traits::{FlagHelpers};
 
 #[derive(Debug)]
+/// Represents 8 bit flag register
 pub(crate) struct ConditionalCodes {
+    /// Zero flag, set when result is zero
     pub(crate) z: bool,
+    /// Sign flag, set when result is negative
     pub(crate) s: bool,
+    /// Parity flag, set when number of bit 
+    /// in the result is odd
     pub(crate) p: bool,
+    /// Carry flag, set when high/low bit shifts to low/high
     pub(crate) cy: bool,
+    /// Aux carry, not implemented
     pub(crate) ac: bool,
 }
 
@@ -34,10 +41,9 @@ impl Display for ConditionalCodes {
 }
 
 impl ConditionalCodes {
-    /// Value size must be x2 greater
-    /// Example: eu8 -> u16
+    /// Sets conditional codes
     /// # Registers affected
-    /// Z, S, P, AC
+    /// Z, S, P. AC - not implemented
     pub fn set_zspac<T>(&mut self, val: T)
     where
         T: FlagHelpers,
@@ -47,7 +53,7 @@ impl ConditionalCodes {
         self.p = val.parity();
         self.ac = val.aux_carry();
     }
-
+    /// Sets conditional codes according to CMP operation
     /// #Registers affected
     /// Z, S, P, CY
     pub fn set_cmp(&mut self, lhs: u8, rhs: u8) {

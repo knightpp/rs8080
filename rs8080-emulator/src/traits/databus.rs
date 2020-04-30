@@ -4,6 +4,6 @@ pub trait DataBus {
     fn port_in(&mut self, port: u8) -> u8;
     /// __Writes__ value __to__ port, invoked by `OUT`
     fn port_out(&mut self, rega: u8, port: u8);
-
+    /// Returns `&mut u8` to modify value of port
     fn port(&mut self, index: usize) -> &mut u8;
 }

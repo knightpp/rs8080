@@ -6,6 +6,7 @@ use crate::traits::{MemLimiter, WriteAction};
 use crate::ClockCycles;
 use disasm::{disassemble, Command};
 
+/// Default mem access policy, allowing all writes and reads
 pub(crate) struct AllowAll {}
 impl MemLimiter for AllowAll {
     fn check_write(&self, _: u16, _: u8) -> WriteAction {
@@ -57,11 +58,7 @@ impl fmt::Display for RS8080 {
 }
 
 impl RS8080 {
-    #[inline]
-    pub fn get_mem_slice(&self, r: std::ops::Range<usize>) -> &[u8] {
-        &self.mem[r]
-    }
-
+    /// Creates new emulated CPU, mem access policy is allow all
     pub fn new(io_device: Box<dyn DataBus + Send + Sync>) -> RS8080 {
         RS8080 {
             a: 0,
@@ -84,6 +81,7 @@ impl RS8080 {
         }
     }
 
+    /// Sets new mem access policy
     pub fn set_mem_limiter(&mut self, new_mem_limiter: Box<dyn MemLimiter + Send + Sync>) {
         self.mem_limiter = new_mem_limiter;
     }
@@ -100,6 +98,7 @@ impl RS8080 {
     pub fn get_mem(&self) -> &[u8] {
         &self.mem
     }
+
     /// # Panics
     /// length of slice > mem
     #[inline]
@@ -108,16 +107,17 @@ impl RS8080 {
             panic!("input was too large for emulated memory (max 0xFFFF)");
         }
         self.mem[offset as usize..(slice.len() + offset as usize)].copy_from_slice(slice);
-        // for (i, x) in slice.iter().enumerate().map(|(i, x)|(i+ offset as usize, x)) {
-        //     self.mem[i] = *x;
-        // }
     }
 
     #[inline]
+    /// Returns [Command](./../rs8080_disassembler/command/struct.Command.html) that
+    /// implements `Display` trait
     pub fn disassemble_next(&self) -> Command {
         disassemble(&self.mem[self.pc as usize..])
     }
 
+    /// Emulate next opcode pointed by program counter.
+    /// Returns [ClockCycles](./struct.ClockCycles.html) spent on the opcode
     pub fn emulate_next(&mut self) -> ClockCycles {
         let mut cycles;
         let mem_from_pc = &self.mem[self.pc as usize..];
@@ -1751,6 +1751,7 @@ impl RS8080 {
     }
 
     #[inline(always)]
+    /// Returns program counter
     pub fn get_pc(&self) -> u16 {
         self.pc
     }
@@ -1810,6 +1811,7 @@ impl RS8080 {
     }
 
     #[inline]
+    /// Returns whether interrupts are enabled or not
     pub fn int_enabled(&self) -> bool {
         self.int_enable
     }
