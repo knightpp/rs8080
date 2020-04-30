@@ -1,6 +1,4 @@
 use rs8080_disassembler::*;
-use std::fs::File;
-use std::io::Read;
 
 fn main() {
     let buf = include_bytes!("../../../roms/cpudiag.bin");

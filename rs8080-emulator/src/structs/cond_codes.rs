@@ -1,8 +1,5 @@
 use std::fmt::{self, Display, Formatter};
-use std::{num::Wrapping, ops};
-
-use crate::traits::{FlagHelpers, OverflowMath};
-use ops::Sub;
+use crate::traits::{FlagHelpers};
 
 #[derive(Debug)]
 pub(crate) struct ConditionalCodes {
