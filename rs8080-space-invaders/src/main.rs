@@ -146,10 +146,6 @@ pub fn main() {
     emu.load_to_mem(f, 0x1000);
     emu.load_to_mem(e, 0x1800);
 
-    //for _ in 0..300000 {
-    //    emu.emulate_next();
-    //
-
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem
@@ -165,7 +161,6 @@ pub fn main() {
         .unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-    thread::sleep(Duration::from_millis(10));
     'running: loop {
         //let start = Instant::now();
         for event in event_pump.poll_iter() {
@@ -183,6 +178,7 @@ pub fn main() {
         canvas.present();
 
         // 2 MHz = 2 * 10^6 Hz; 500 ns -- 1 cycle; 1/60/(500*10^-9) = 33333.333
+        //let start = Instant::now();
         let mut cycles_left = 33333i32;
         while cycles_left > 0 {
             let cycles = emu.emulate_next();
@@ -191,8 +187,7 @@ pub fn main() {
         emu.generate_int(0x8);
         emu.generate_int(0x10);
 
-        //let start = Instant::now();
+        //println!("ms elapsed: {}", start.elapsed().as_micros());
         thread::sleep(Duration::from_secs_f64(1f64 / 60f64));
-        //println!("ms elapsed: {}", start.elapsed().as_millis());
     }
 }
