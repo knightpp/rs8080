@@ -5,7 +5,6 @@ use emulator::{MemLimiter, WriteAction};
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::{Texture, WindowCanvas};
 use std::{
@@ -13,8 +12,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use std::sync::mpsc;
-use std::sync::{Arc, Mutex};
+extern crate crossbeam;
+use crossbeam::crossbeam_channel::unbounded;
 
 fn get_bitvec(byte: u8) -> [bool; 8] {
     let mut bitvec = [false; 8];
@@ -141,23 +140,29 @@ pub fn draw_space_invaders_vram(canvas: &mut WindowCanvas, tex: &mut Texture, vr
 
 enum Test {
     Int(u8),
+    SendVRAM,
 }
 
 pub fn main() {
-    let emu = Arc::new(Mutex::new(RS8080::new(Box::new(SpaceInvadersIO::new()))));
+    let mut emu = RS8080::new(Box::new(SpaceInvadersIO::new()));
     let h = include_bytes!("../../roms/invaders.h");
     let g = include_bytes!("../../roms/invaders.g");
     let f = include_bytes!("../../roms/invaders.f");
     let e = include_bytes!("../../roms/invaders.e");
-    emu.lock().unwrap().load_to_mem(h, 0);
-    emu.lock().unwrap().load_to_mem(g, 0x0800);
-    emu.lock().unwrap().load_to_mem(f, 0x1000);
-    emu.lock().unwrap().load_to_mem(e, 0x1800);
-    let (sn, rx) = mpsc::channel();
+    emu.load_to_mem(h, 0);
+    emu.load_to_mem(g, 0x0800);
+    emu.load_to_mem(f, 0x1000);
+    emu.load_to_mem(e, 0x1800);
+
+    for _ in 0..300000 {
+        emu.emulate_next();
+    }
+
+    let (sender, receiver) = unbounded();
+    let (sender2, receiver2) = unbounded();
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
-
     let window = video_subsystem
         .window("rs8080-gui", 224 * 3, 256 * 3)
         .position_centered()
@@ -169,67 +174,50 @@ pub fn main() {
     let mut texture = tc
         .create_texture_streaming(PixelFormatEnum::RGB332, 224, 256)
         .unwrap();
-    //let mut time_since_last_int = Instant::now();
 
-    let emu2 = Arc::clone(&emu);
+    let rec = receiver.clone();
     thread::spawn(move || {
-        let rx = rx;
-        let emu2 = emu2;
+        let sender2 = sender2;
+        let receiver = rec;
+
         loop {
             // 2 MHz = 2 * 10^6 Hz
-            if let Ok(Test::Int(x)) = rx.try_recv() {
-                emu2.lock().unwrap().generate_int(x as u16);
-                //println!("{}", emu2.lock().unwrap());
+            //let start = Instant::now();
+            if let Ok(x) = receiver.try_recv() {
+                match x {
+                    Test::Int(x) => {
+                        //emu.generate_int(x as u16);
+                        if emu.int_enabled() {
+                            emu.generate_int(0x8);
+                            emu.generate_int(0x10);
+                        }
+                    }
+                    Test::SendVRAM => sender2
+                        .send(emu.get_mem()[0x2400..0x3FFF].to_vec())
+                        .unwrap(),
+                }
             } else {
-                emu2.lock().unwrap().emulate_next();
-                //println!("{}", emu2.lock().unwrap());
+                emu.emulate_next();
             }
-            thread::sleep(Duration::from_secs_f64(1f64 / (10f64.powf(6f64))));
+
+            //thread::sleep(Duration::from_secs_f64(1f64 / (10f64.powf(6f64) * 2f64)));
+            //thread::sleep(Duration::from_nanos(500));
+            //println!("micros elapsed: {}", start.elapsed().as_micros());
         }
     });
     let mut event_pump = sdl_context.event_pump().unwrap();
-
-    canvas.set_draw_color(Color::MAGENTA);
-    canvas.present();
-    
-    //thread::sleep(Duration::from_millis(500));
+    thread::sleep(Duration::from_millis(10));
     'running: loop {
         //for _ in event_pump.poll_iter(){}
 
-        draw_space_invaders_vram(
-            &mut canvas,
-            &mut texture,
-            &emu.lock().unwrap().get_mem_slice(0x2400..0x3FFF).to_owned(),
-        );
+        sender.send(Test::SendVRAM).unwrap();
+        let vram = receiver2.recv().unwrap();
+        draw_space_invaders_vram(&mut canvas, &mut texture, &vram);
+        canvas.present();
+
+        //let start = Instant::now();
         for event in event_pump.poll_iter() {
             match event {
-                Event::KeyDown {
-                    keycode: Some(Keycode::X),
-                    ..
-                } => {
-                    //emu.generate_int(0x10);
-                    // println!("{:?}", emu.get_io_mut().ports());
-                    //*emu.get_io_mut().port(1) |= 0x1;
-                    println!("X down");
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::C),
-                    ..
-                } => {
-                    //emu.generate_int(0x8);
-                    // println!("{:?}", emu.get_io_mut().ports());
-                    //*emu.get_io_mut().port(1) |= 0x1;
-                    println!("C down");
-                }
-                Event::KeyUp {
-                    keycode: Some(Keycode::C),
-                    ..
-                } => {
-                    // println!("{:?}", emu.get_io_mut().ports());
-                    //*emu.get_io_mut().port(1)  &= !0x1;
-
-                    println!("C up");
-                }
                 Event::Quit { .. }
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
@@ -238,67 +226,11 @@ pub fn main() {
                 _ => {}
             }
         }
-        if emu.lock().unwrap().int_enabled(){
-            sn.send(Test::Int(0x8)).unwrap();
-            sn.send(Test::Int(0x10)).unwrap();
-        }
-        
 
+        sender.send(Test::Int(0x8)).unwrap();
+
+        //let start = Instant::now();
         thread::sleep(Duration::from_secs_f64(1f64 / 60f64));
-
-        // println!("{}", emu.disassemble_next());
-        // let now = Instant::now();
-        //  if now.duration_since(time_since_last_int) > Duration::from_secs_f64(1f64/60f64){
-
-        // for event in event_pump.poll_iter() {
-        //     match event {
-        //         Event::KeyDown{keycode : Some(Keycode::X) ,..} => {
-        //             //emu.generate_int(0x10);
-        //            // println!("{:?}", emu.get_io_mut().ports());
-        //             //*emu.get_io_mut().port(1) |= 0x1;
-        //             println!("X down");
-        //         }
-        //         Event::KeyDown{keycode : Some(Keycode::C) ,..} => {
-        //             //emu.generate_int(0x8);
-        //            // println!("{:?}", emu.get_io_mut().ports());
-        //            //*emu.get_io_mut().port(1) |= 0x1;
-        //             println!("C down");
-        //         }
-        //         Event::KeyUp{keycode : Some(Keycode::C) ,..} => {
-        //            // println!("{:?}", emu.get_io_mut().ports());
-        //            //*emu.get_io_mut().port(1)  &= !0x1;
-
-        //             println!("C up");
-        //         }
-        //         Event::Quit {..} |
-        //         Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-        //             break 'running
-        //         },
-        //         _ => {}
-        //     }
-        // }
-        // draw_space_invaders_vram(&mut canvas,&mut texture,emu.get_mem_slice(0x2400..0x3FFF));
-        // canvas.present();
-        // if emu.int_enabled(){
-        //     //emu.generate_interrupt(2);
-        //     emu.generate_int(0x8);
-        //     emu.generate_int(0x10);
-        //     //emu.emulate_next();
-        // }
-        // emu.emulate_next();
-        // time_since_last_int = now;
-        //  }else{
-        //     emu.emulate_next();
-        // }
-
-        // for event in event_pump.wait_iter(){
-        //     if let Event::MouseButtonDown{..} = event{
-        //         for _ in 0..100{
-        //             println!("{} {}", emu.disassemble_next(), emu);
-        //             emu.emulate_next();
-        //         }
-        //        // break;
-        //     }
-        // }
+        //println!("ms elapsed: {}", start.elapsed().as_millis());
     }
 }
