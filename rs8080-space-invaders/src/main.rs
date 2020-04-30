@@ -12,9 +12,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-extern crate crossbeam;
-use crossbeam::crossbeam_channel::unbounded;
-
 fn get_bitvec(byte: u8) -> [bool; 8] {
     let mut bitvec = [false; 8];
     bitvec[0] = byte & 0b0000_0001 > 0;
@@ -138,11 +135,6 @@ pub fn draw_space_invaders_vram(canvas: &mut WindowCanvas, tex: &mut Texture, vr
     canvas.copy(&tex, None, None).unwrap();
 }
 
-enum Test {
-    Int(u8),
-    SendVRAM,
-}
-
 pub fn main() {
     let mut emu = RS8080::new(Box::new(SpaceInvadersIO::new()));
     let h = include_bytes!("../../roms/invaders.h");
@@ -154,12 +146,9 @@ pub fn main() {
     emu.load_to_mem(f, 0x1000);
     emu.load_to_mem(e, 0x1800);
 
-    for _ in 0..300000 {
-        emu.emulate_next();
-    }
-
-    let (sender, receiver) = unbounded();
-    let (sender2, receiver2) = unbounded();
+    //for _ in 0..300000 {
+    //    emu.emulate_next();
+    //
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -175,46 +164,9 @@ pub fn main() {
         .create_texture_streaming(PixelFormatEnum::RGB332, 224, 256)
         .unwrap();
 
-    let rec = receiver.clone();
-    thread::spawn(move || {
-        let sender2 = sender2;
-        let receiver = rec;
-
-        loop {
-            // 2 MHz = 2 * 10^6 Hz
-            //let start = Instant::now();
-            if let Ok(x) = receiver.try_recv() {
-                match x {
-                    Test::Int(x) => {
-                        //emu.generate_int(x as u16);
-                        if emu.int_enabled() {
-                            emu.generate_int(0x8);
-                            emu.generate_int(0x10);
-                        }
-                    }
-                    Test::SendVRAM => sender2
-                        .send(emu.get_mem()[0x2400..0x3FFF].to_vec())
-                        .unwrap(),
-                }
-            } else {
-                emu.emulate_next();
-            }
-
-            //thread::sleep(Duration::from_secs_f64(1f64 / (10f64.powf(6f64) * 2f64)));
-            //thread::sleep(Duration::from_nanos(500));
-            //println!("micros elapsed: {}", start.elapsed().as_micros());
-        }
-    });
     let mut event_pump = sdl_context.event_pump().unwrap();
     thread::sleep(Duration::from_millis(10));
     'running: loop {
-        //for _ in event_pump.poll_iter(){}
-
-        sender.send(Test::SendVRAM).unwrap();
-        let vram = receiver2.recv().unwrap();
-        draw_space_invaders_vram(&mut canvas, &mut texture, &vram);
-        canvas.present();
-
         //let start = Instant::now();
         for event in event_pump.poll_iter() {
             match event {
@@ -227,7 +179,17 @@ pub fn main() {
             }
         }
 
-        sender.send(Test::Int(0x8)).unwrap();
+        draw_space_invaders_vram(&mut canvas, &mut texture, &emu.get_mem()[0x2400..0x3FFF]);
+        canvas.present();
+
+        // 2 MHz = 2 * 10^6 Hz; 500 ns -- 1 cycle; 1/60/(500*10^-9) = 33333.333
+        let mut cycles_left = 33333i32;
+        while cycles_left > 0 {
+            let cycles = emu.emulate_next();
+            cycles_left -= cycles.0 as i32;
+        }
+        emu.generate_int(0x8);
+        emu.generate_int(0x10);
 
         //let start = Instant::now();
         thread::sleep(Duration::from_secs_f64(1f64 / 60f64));

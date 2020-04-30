@@ -11,4 +11,4 @@ extern crate derive_more;
 use derive_more::{Add, Display, From};
 
 #[derive(Add, Display, From)]
-pub struct ClockCycles(u8);
+pub struct ClockCycles(pub u8);
