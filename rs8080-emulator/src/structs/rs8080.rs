@@ -159,7 +159,7 @@ impl RS8080 {
                 self.a = self.a.rotate_left(1);
             }
             // Nop (Undocumented)
-            [0x08, ..] => {}
+            [0x08, ..] => cycles = 4.into(),
             // DAD B
             [0x09, ..] => {
                 let carry = self.hl.add_carry(self.bc.into());
@@ -175,9 +175,8 @@ impl RS8080 {
             }
             // INR C
             [0x0C, ..] => {
-                let rez = self.bc.c as u16 + 1;
-                self.cc.set_zspac(rez);
-                self.bc.c = rez as u8;
+                self.bc.c.add_un(1);
+                self.cc.set_zspac(self.bc.c);
             }
             // DCR C
             [0x0D, ..] => {
@@ -196,7 +195,7 @@ impl RS8080 {
             }
 
             // Nop (Undocumented)
-            [0x10, ..] => {}
+            [0x10, ..] => {cycles = 4.into()}
             // LXI D,D16
             [0x11, d16_lo, d16_hi, ..] => {
                 self.de.d = d16_hi;
@@ -213,15 +212,13 @@ impl RS8080 {
             }
             // INR D
             [0x14, ..] => {
-                let rez = self.de.d as u16 + 1;
-                self.cc.set_zspac(rez);
-                self.de.d = rez as u8;
+                self.de.d.add_un(1);
+                self.cc.set_zspac(self.de.d);
             }
             // DCR D
             [0x15, ..] => {
-                let rez = self.de.d as u16 - 1;
-                self.cc.set_zspac(rez);
-                self.de.d = rez as u8;
+                self.de.d.sub_un(1);
+                self.cc.set_zspac(self.de.d);
             }
             // MVI D, D8
             [0x16, d8, ..] => {
@@ -236,7 +233,7 @@ impl RS8080 {
                 self.a |= prev_cy as u8;
             }
             // Nop (Undocumented)
-            [0x18, ..] => {}
+            [0x18, ..] => {cycles = 4.into()}
             // DAD D
             [0x19, ..] => {
                 let carry = self.hl.add_carry(self.de.into());
@@ -252,15 +249,13 @@ impl RS8080 {
             }
             // INR E
             [0x1C, ..] => {
-                let rez = (self.de.e as u16).wrapping_add(1);
-                self.de.e = rez as u8;
-                self.cc.set_zspac(rez);
+                self.de.e.add_un(1);
+                self.cc.set_zspac(self.de.e);
             }
             // DCR E
             [0x1D, ..] => {
-                let rez = (self.de.e as u16).wrapping_sub(1);
-                self.de.e = rez as u8;
-                self.cc.set_zspac(rez);
+                self.de.e.sub_un(1);
+                self.cc.set_zspac(self.de.e);
             }
             // MVI E,D8
             [0x1E, d8, ..] => {
@@ -276,7 +271,7 @@ impl RS8080 {
             }
 
             // Nop (Undocumented)
-            [0x20, ..] => {}
+            [0x20, ..] => {cycles = 4.into()}
             // LXI H,D16
             [0x21, lo, hi, ..] => {
                 self.hl.set(TwoU8 { lo, hi });
@@ -295,15 +290,13 @@ impl RS8080 {
             }
             // INR H
             [0x24, ..] => {
-                let x = self.hl.h as u16 + 1;
-                self.hl.h = x as u8;
-                self.cc.set_zspac(x);
+                self.hl.h.add_un(1);
+                self.cc.set_zspac(self.hl.h);
             }
             // DCR H
             [0x25, ..] => {
-                let x = self.hl.h as u16 - 1;
-                self.hl.h = x as u8;
-                self.cc.set_zspac(x);
+                self.hl.h.sub_un(1);
+                self.cc.set_zspac(self.hl.h);
             }
             // MVI H,D8
             [0x26, d8, ..] => {
@@ -323,7 +316,7 @@ impl RS8080 {
                 }
             }
             // Nop (Undocumented)
-            [0x28, ..] => {}
+            [0x28, ..] => {cycles = 4.into()}
             // DAD H
             [0x29, ..] => {
                 let carry = self.hl.add_carry(self.hl.into());
@@ -347,9 +340,8 @@ impl RS8080 {
             }
             // DCR L
             [0x2D, ..] => {
-                let x = self.hl.l as u16 - 1;
-                self.hl.l = x as u8;
-                self.cc.set_zspac(x);
+                self.hl.l.sub_un(1);
+                self.cc.set_zspac(self.hl.l);
             }
             // MVI L, D8
             [0x2E, d8, ..] => {
@@ -362,7 +354,7 @@ impl RS8080 {
             }
 
             // Nop (Undocumented)
-            [0x30, ..] => {}
+            [0x30, ..] => {cycles = 4.into()}
             // LXI SP, D16
             [0x31, lo, hi, ..] => {
                 self.sp = TwoU8 { lo, hi }.into();
@@ -401,7 +393,7 @@ impl RS8080 {
                 self.cc.cy = true;
             }
             // Nop (Undocumented)
-            [0x38, ..] => {}
+            [0x38, ..] => {cycles = 4.into()}
             // DAD SP
             [0x39, ..] => {
                 let carry = self.hl.add_carry(self.sp);
@@ -1156,7 +1148,7 @@ impl RS8080 {
                 }
             }
             // Nop (Undocumented)
-            [0xCB, ..] => {}
+            [0xCB, ..] => {cycles = 4.into()}
             // CZ adr
             [0xCC, lo, hi, ..] => {
                 self.pc += 2;
@@ -1263,7 +1255,7 @@ impl RS8080 {
                 }
             }
             // Nop (Undocumented)
-            [0xD9, ..] => {}
+            [0xD9, ..] => {cycles = 4.into()}
             // JC
             // JC adr
             [0xDA, lo, hi, ..] => {
@@ -1287,7 +1279,7 @@ impl RS8080 {
                 }
             }
             // Nop (Undocumented)
-            [0xDD, ..] => {}
+            [0xDD, ..] => {cycles = 4.into()}
             // SBI D8
             [0xDE, d8, ..] => {
                 let carry1 = self.a.sub_carry(d8);
@@ -1382,7 +1374,7 @@ impl RS8080 {
                 }
             }
             // Nop (Undocumented)
-            [0xED, ..] => {}
+            [0xED, ..] => {cycles = 4.into()}
             // XRI D8
             [0xEE, d8, ..] => {
                 self.a ^= d8;
@@ -1444,11 +1436,8 @@ impl RS8080 {
                 let mut data = 0;
                 data |= (self.cc.s as u8) << 7;
                 data |= (self.cc.z as u8) << 6;
-                //data |= (self.cc.s as u16) << 7;
                 data |= (self.cc.ac as u8) << 4;
-                //data |= (self.cc.s as u16) << 7;
                 data |= (self.cc.p as u8) << 2;
-                //data |= (self.cc.s as u16) << 7;
                 data |= (self.cc.cy as u8) << 0;
                 self.push(TwoU8::new(data, self.a));
             }
@@ -1494,7 +1483,7 @@ impl RS8080 {
                 }
             }
             // Nop (Undocumented)
-            [0xFD, ..] => {}
+            [0xFD, ..] => {cycles = 4.into()}
             // CPI D8
             [0xFE, d8, ..] => {
                 self.cc.set_cmp(self.a, d8);
