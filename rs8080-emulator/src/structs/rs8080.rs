@@ -170,8 +170,7 @@ impl RS8080 {
             // DAD B
             [0x09, ..] => {
                 cycles = 10.into();
-                let carry = self.hl.add_carry(self.bc.into());
-                self.cc.cy = carry;
+                self.cc.cy = self.hl.add_carry(self.bc.into());
             }
             // LDAX B
             [0x0A, ..] => {
@@ -258,8 +257,7 @@ impl RS8080 {
             // DAD D
             [0x19, ..] => {
                 cycles = 10.into();
-                let carry = self.hl.add_carry(self.de.into());
-                self.cc.cy = carry;
+                self.cc.cy = self.hl.add_carry(self.de.into());
             }
             // LDAX D
             [0x1A, ..] => {
@@ -340,23 +338,21 @@ impl RS8080 {
             // DAA
             [0x27, ..] => {
                 cycles = 4.into();
-                // TODO: DAA
-                todo!();
-                if self.a & 0xf > 9 {
-                    self.a += 6;
+                if self.a & 0xf > 9 || self.cc.ac {
+                    self.a.add_un(6);
                 }
-                if self.a & 0xf0 > 0x90 {
+                if self.a & 0xf0 > 0x90 || self.cc.cy {
                     self.a.add_un(0x60);
-                    self.cc.set_zspac(self.a);
                 }
+                self.cc.set_zspac(self.a);
+                eprintln!("DAA");
             }
             // Nop (Undocumented)
             [0x28, ..] => cycles = 4.into(),
             // DAD H
             [0x29, ..] => {
                 cycles = 10.into();
-                let carry = self.hl.add_carry(self.hl.into());
-                self.cc.cy = carry;
+                self.cc.cy = self.hl.add_carry(self.hl.into());
             }
             // LHLD adr
             [0x2A, lo, hi, ..] => {
@@ -446,8 +442,7 @@ impl RS8080 {
             // DAD SP
             [0x39, ..] => {
                 cycles = 10.into();
-                let carry = self.hl.add_carry(self.sp);
-                self.cc.cy = carry;
+                self.cc.cy = self.hl.add_carry(self.sp);
             }
             // LDA adr
             [0x3A, lo, hi, ..] => {
@@ -802,7 +797,7 @@ impl RS8080 {
             [0x7E, ..] => {
                 cycles = 7.into();
                 self.a = self.read_mem(self.hl);
-            },
+            }
             // MOV A,A
             [0x7F, ..] => {
                 cycles = 5.into();
@@ -812,58 +807,50 @@ impl RS8080 {
             // ADD B
             [0x80, ..] => {
                 cycles = 4.into();
-                let carry = self.a.add_carry(self.bc.b);
+                self.cc.cy = self.a.add_carry(self.bc.b);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADD C
             [0x81, ..] => {
                 cycles = 4.into();
-                let carry = self.a.add_carry(self.bc.c);
+                self.cc.cy = self.a.add_carry(self.bc.c);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADD D
             [0x82, ..] => {
                 cycles = 4.into();
-                let carry = self.a.add_carry(self.de.d);
+                self.cc.cy = self.a.add_carry(self.de.d);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADD E
             [0x83, ..] => {
                 cycles = 4.into();
-                let carry = self.a.add_carry(self.de.e);
+                self.cc.cy = self.a.add_carry(self.de.e);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADD H
             [0x84, ..] => {
                 cycles = 4.into();
-                let carry = self.a.add_carry(self.hl.h);
+                self.cc.cy = self.a.add_carry(self.hl.h);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADD L
             [0x85, ..] => {
                 cycles = 4.into();
-                let carry = self.a.add_carry(self.hl.l);
+                self.cc.cy = self.a.add_carry(self.hl.l);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADD M
             [0x86, ..] => {
                 cycles = 7.into();
-                let carry = self.a.add_carry(self.read_mem(self.hl));
+                self.cc.cy = self.a.add_carry(self.read_mem(self.hl));
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADD A
             [0x87, ..] => {
                 cycles = 4.into();
-                let carry = self.a.add_carry(self.a);
+                self.cc.cy = self.a.add_carry(self.a);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // ADC B
             [0x88, ..] => {
@@ -941,58 +928,50 @@ impl RS8080 {
             // SUB B
             [0x90, ..] => {
                 cycles = 4.into();
-                let carry = self.a.sub_carry(self.bc.b);
+                self.cc.cy = self.a.sub_carry(self.bc.b);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SUB C
             [0x91, ..] => {
                 cycles = 4.into();
-                let carry = self.a.sub_carry(self.bc.c);
+                self.cc.cy = self.a.sub_carry(self.bc.c);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SUB D
             [0x92, ..] => {
                 cycles = 4.into();
-                let carry = self.a.sub_carry(self.de.d);
+                self.cc.cy = self.a.sub_carry(self.de.d);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SUB E
             [0x93, ..] => {
                 cycles = 4.into();
-                let carry = self.a.sub_carry(self.de.e);
+                self.cc.cy = self.a.sub_carry(self.de.e);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SUB H
             [0x94, ..] => {
                 cycles = 4.into();
-                let carry = self.a.sub_carry(self.hl.h);
+                self.cc.cy = self.a.sub_carry(self.hl.h);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SUB L
             [0x95, ..] => {
                 cycles = 4.into();
-                let carry = self.a.sub_carry(self.hl.l);
+                self.cc.cy = self.a.sub_carry(self.hl.l);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SUB M
             [0x96, ..] => {
                 cycles = 7.into();
-                let carry = self.a.sub_carry(self.read_mem(self.hl));
+                self.cc.cy = self.a.sub_carry(self.read_mem(self.hl));
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SUB A
             [0x97, ..] => {
                 cycles = 4.into();
-                let carry = self.a.sub_carry(self.a);
+                self.cc.cy = self.a.sub_carry(self.a);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
             }
             // SBB B
             [0x98, ..] => {
@@ -1449,9 +1428,8 @@ impl RS8080 {
             // SUI D8
             [0xD6, d8, ..] => {
                 cycles = 7.into();
-                let carry = self.a.sub_carry(d8);
+                self.cc.cy = self.a.sub_carry(d8);
                 self.cc.set_zspac(self.a);
-                self.cc.cy = carry;
                 self.pc += 1;
             }
             // RST 2
@@ -1772,15 +1750,11 @@ impl RS8080 {
     }
 
     #[inline]
+    /// `Call adr`, where `adr = interrupt_num * 0x8`,
+    /// and sets `int_enable` to `false`
     pub fn generate_interrupt(&mut self, interrupt_num: u16) {
         self.int_enable = false;
         self.call(8 * interrupt_num);
-    }
-
-    #[inline]
-    pub fn generate_int(&mut self, adr: u16) {
-        self.int_enable = false;
-        self.call(adr);
     }
 
     fn pop(&mut self) -> TwoU8 {
