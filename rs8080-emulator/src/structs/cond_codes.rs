@@ -1,5 +1,5 @@
+use crate::traits::FlagHelpers;
 use std::fmt::{self, Display, Formatter};
-use crate::traits::{FlagHelpers};
 
 #[derive(Debug)]
 /// Represents 8 bit flag register
@@ -8,7 +8,7 @@ pub(crate) struct ConditionalCodes {
     pub(crate) z: bool,
     /// Sign flag, set when result is negative
     pub(crate) s: bool,
-    /// Parity flag, set when number of bit 
+    /// Parity flag, set when number of bits
     /// in the result is odd
     pub(crate) p: bool,
     /// Carry flag, set when high/low bit shifts to low/high
