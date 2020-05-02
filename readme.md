@@ -1,11 +1,13 @@
 # WIP
 Intel 8080 emulator and space invaders arcade machine.
 
-## TODOs
+## Intel 8080 emulation TODOs
 - [ ] A lot of tests
-- [X] Is space invaders playable? 
 - [X] Is `cpudiag` succeeds?
-- [ ] Config file, keyboard bindings for two players
+
+## Space Invaders TODOs
+- [X] Is space invaders playable? 
+- [X] Config file, keyboard bindings for two players
 - [ ] Sounds
 
 ## Used resources

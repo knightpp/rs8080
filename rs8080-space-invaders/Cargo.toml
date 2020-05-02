@@ -9,6 +9,8 @@ edition = "2018"
 [dependencies]
 sdl2={version ="0.34.0", features = ["bundled"]}
 rs8080-emulator = {path = "../rs8080-emulator"}
+toml = "0.5"
+serde = { version = "1.0", features = ["derive"] }
 
 [profile.release]
 lto = "yes"
