@@ -70,14 +70,11 @@ impl DataBus for SpaceInvadersIO {
         match port {
             0 => 0xf,
             1 => self.ports[1],
-            2 => 0,
             3 => {
-                //let v: u16 = ((self.shift1 as u16) << 8) | self.shift0 as u16;
-                //((v >> (8u8 - self.shift_offset) as u16) & 0xFF) as u8
                 (((self.shift0 as u16) << 8) | self.shift1 as u16)
                     .rotate_left(self.shift_offset as u32) as u8
             }
-            _ => 0,
+            _ => self.ports[port as usize],
         }
     }
 
@@ -190,6 +187,66 @@ pub fn main() {
         let start = Instant::now();
         for event in event_pump.poll_iter() {
             match event {
+                // Event::KeyDown{
+                //     keycode : Some(x), ..
+                // } =>{
+                //     println!("{:?}", x);
+                // }
+                Event::KeyDown{
+                    keycode: Some(Keycode::C),..
+                } =>{
+                    *emu.get_io_mut().port(1) |= 0x1;
+                }
+                Event::KeyUp{
+                    keycode: Some(Keycode::C),..
+                } =>{
+                    *emu.get_io_mut().port(1) &= !0x1;
+                }
+
+                Event::KeyDown{
+                    keycode: Some(Keycode::A),..
+                } =>{
+                    *emu.get_io_mut().port(1) |= 0b0010_0000;
+                }
+                Event::KeyUp{
+                    keycode: Some(Keycode::A),..
+                } =>{
+                    *emu.get_io_mut().port(1) &= !0b0010_0000;
+                }
+
+                Event::KeyDown{
+                    keycode: Some(Keycode::D),..
+                } =>{
+                    *emu.get_io_mut().port(1) |= 0b0100_0000;
+                }
+                Event::KeyUp{
+                    keycode: Some(Keycode::D),..
+                } =>{
+                    *emu.get_io_mut().port(1) &= !0b0100_0000;
+                }
+
+                Event::KeyDown{
+                    keycode: Some(Keycode::Space),..
+                } =>{
+                    *emu.get_io_mut().port(1) |= 0b0001_0000;
+                }
+                Event::KeyUp{
+                    keycode: Some(Keycode::Space),..
+                } =>{
+                    *emu.get_io_mut().port(1) &= !0b0001_0000;
+                }
+
+                Event::KeyDown{
+                    keycode: Some(Keycode::Num1),..
+                } =>{
+                    *emu.get_io_mut().port(1) |= 0b0000_0100;
+                }
+                Event::KeyUp{
+                    keycode: Some(Keycode::Num1),..
+                } =>{
+                    *emu.get_io_mut().port(1) &= !0b0000_0100;
+                }
+
                 Event::Quit { .. }
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
@@ -198,35 +255,32 @@ pub fn main() {
                 _ => {}
             }
         }
-
-        draw_space_invaders_vram(&mut canvas, &mut texture, &emu.get_mem()[0x2400..0x3FFF]);
-        canvas.present();
-
-        // 2 MHz = 2 * 10^6 Hz; 500 ns -- 1 cycle; 1/60/(500*10^-9) = 33333.333
-        //let start = Instant::now();
-        let mut cycles_left = 33333i32;
-        while cycles_left > 0 {
-            let cycles = emu.emulate_next();
-            cycles_left -= cycles.0 as i32;
-        }
-        if emu.int_enabled() {
-            if flipflop {
-                //emu.generate_interrupt(2);
-                emu.call_interrupt(0x10);
-            } else {
-                //emu.generate_interrupt(1);
-                emu.call_interrupt(0x8);
-            }
-            flipflop = !flipflop;
-        }
-
-        let elapsed = start.elapsed();
         
+        // 2 MHz = 2 * 10^6 Hz; 500 ns -- 1 cycle; 1/60/(500*10^-9) = 33333.333
+        for _ in 0..2{
+            let mut cycles_left = 33333i32/2;
+            while cycles_left > 0 {
+                let cycles = emu.emulate_next();
+                cycles_left -= cycles.0 as i32;
+            }
+            if emu.int_enabled() {
+                draw_space_invaders_vram(&mut canvas, &mut texture, &emu.get_mem()[0x2400..0x3FFF]);
+                canvas.present();
+                if flipflop {
+                    emu.call_interrupt(0x10);
+                } else {
+                    emu.call_interrupt(0x8);
+                }
+                flipflop = !flipflop;
+            }
+        }
+    
+        let elapsed = start.elapsed();    
         //println!("elapsed: {:?}", elapsed);
         //thread::sleep(Duration::from_secs_f64(1f64 / 60f64));
-        if elapsed > Duration::from_secs_f64(1f64 / 120f64){
+        if elapsed > Duration::from_secs_f64(1f64 / 60f64){
             continue;
         }
-        thread::sleep(Duration::from_secs_f64(1f64 / 120f64) - elapsed);
+        thread::sleep(Duration::from_secs_f64(1f64 / 60f64) - elapsed);
     }
 }
