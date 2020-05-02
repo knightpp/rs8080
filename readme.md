@@ -1,10 +1,12 @@
 # WIP
-
+Intel 8080 emulator and space invaders arcade machine.
 
 ## TODOs
 - [ ] A lot of tests
-- [ ] Is space invaders playable? 
+- [X] Is space invaders playable? 
 - [X] Is `cpudiag` succeeds?
+- [ ] Config file, keyboard bindings for two players
+- [ ] Sounds
 
 ## Used resources
 - http://computerarcheology.com/Arcade/SpaceInvaders
