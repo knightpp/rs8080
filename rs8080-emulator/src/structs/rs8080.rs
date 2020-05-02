@@ -352,7 +352,6 @@ impl RS8080 {
                     self.a.add_un(0x60);
                 }
                 self.cc.set_zspac(self.a);
-                eprintln!("DAA");
             }
             // Nop (Undocumented)
             [0x28, ..] => cycles = 4.into(),
