@@ -212,7 +212,7 @@ impl RS8080 {
             // LXI D,D16
             [0x11, lo, hi, ..] => {
                 cycles = 10.into();
-                self.de.set(TwoU8{lo,hi});
+                self.de.set(TwoU8 { lo, hi });
                 self.pc += 2;
             }
             // STAX D
@@ -300,7 +300,7 @@ impl RS8080 {
                 let prev_cy = self.cc.cy;
                 self.cc.cy = self.a & 0b0000_0001 > 0;
                 self.a = self.a >> 1;
-                self.a |= (prev_cy as u8) << 7 ;
+                self.a |= (prev_cy as u8) << 7;
             }
 
             // Nop (Undocumented)
@@ -944,7 +944,7 @@ impl RS8080 {
             // SBB D
             [0x9A, ..] => {
                 cycles = 4.into();
-                 self.sbb(self.de.d);
+                self.sbb(self.de.d);
             }
             // SBB E
             [0x9B, ..] => {
@@ -1096,48 +1096,48 @@ impl RS8080 {
             // CMP B
             [0xB8, ..] => {
                 cycles = 4.into();
-                self.cmp( self.bc.b);
+                self.cmp(self.bc.b);
             }
             // CMP C
             [0xB9, ..] => {
                 cycles = 4.into();
-                self.cmp( self.bc.c);
+                self.cmp(self.bc.c);
             }
             // CMP D
             [0xBA, ..] => {
                 cycles = 4.into();
-                self.cmp( self.de.d);
+                self.cmp(self.de.d);
             }
             // CMP E
             [0xBB, ..] => {
                 cycles = 4.into();
-                self.cmp( self.de.e);
+                self.cmp(self.de.e);
             }
             // CMP H
             [0xBC, ..] => {
                 cycles = 4.into();
-                self.cmp( self.hl.h);
+                self.cmp(self.hl.h);
             }
             // CMP L
             [0xBD, ..] => {
                 cycles = 4.into();
-                self.cmp( self.hl.l);
+                self.cmp(self.hl.l);
             }
             // CMP M
             [0xBE, ..] => {
                 cycles = 7.into();
-                self.cmp( self.read_mem(self.hl));
+                self.cmp(self.read_mem(self.hl));
             }
             // CMP A
             [0xBF, ..] => {
                 cycles = 4.into();
-                self.cmp( self.a);
+                self.cmp(self.a);
             }
 
             // RNZ
             [0xC0, ..] => {
                 cycles = 5.into();
-                if !self.cc.z{
+                if !self.cc.z {
                     cycles = 11.into();
                     self.ret();
                 }
@@ -1191,7 +1191,7 @@ impl RS8080 {
             // RZ
             [0xC8, ..] => {
                 cycles = 5.into();
-                if self.cc.z{
+                if self.cc.z {
                     cycles = 11.into();
                     self.ret();
                 }
@@ -1541,7 +1541,7 @@ impl RS8080 {
                 data |= (self.cc.z as u8) << 6;
                 data |= (self.cc.ac as u8) << 4;
                 data |= (self.cc.p as u8) << 2;
-                data |= (self.cc.cy as u8) << 0;
+                data |= (self.cc.cy as u8);
                 self.push(TwoU8::new(data, self.a));
             }
             // ORI D8
@@ -1643,57 +1643,57 @@ impl RS8080 {
         self.call(8 * interrupt_num);
     }
 
-    pub fn call_interrupt(&mut self, call_adr : u16){
+    pub fn call_interrupt(&mut self, call_adr: u16) {
         //self.int_enable = false;
         self.call(call_adr);
     }
-    
+
     //fn inx(&mut self, rp : &mut)
 
-    fn dad(&mut self, rp : u16){
+    fn dad(&mut self, rp: u16) {
         self.cc.cy = self.hl.add_carry(rp);
     }
 
-    fn cmp(&mut self, regm : u8){
+    fn cmp(&mut self, regm: u8) {
         self.cc.set_cmp(self.a, regm);
     }
 
-    fn ora(&mut self, regm : u8){
+    fn ora(&mut self, regm: u8) {
         self.a |= regm;
         self.cc.set_zspac(self.a);
         self.cc.cy = false;
     }
 
-    fn xra(&mut self, regm : u8){
+    fn xra(&mut self, regm: u8) {
         self.a ^= regm;
         self.cc.set_zspac(self.a);
         self.cc.cy = false;
     }
 
-    fn ana(&mut self, regm : u8){
+    fn ana(&mut self, regm: u8) {
         self.a &= regm;
         self.cc.set_zspac(self.a);
         self.cc.cy = false;
     }
 
-    fn sbb(&mut self, regm : u8){
+    fn sbb(&mut self, regm: u8) {
         let carry1 = self.a.sub_carry(regm);
         let carry2 = self.a.sub_carry(self.cc.cy as u8);
         self.cc.set_zspac(self.a);
         self.cc.cy = carry1 || carry2;
     }
 
-    fn sub(&mut self, regm : u8){
+    fn sub(&mut self, regm: u8) {
         self.cc.cy = self.a.sub_carry(regm);
         self.cc.set_zspac(self.a);
     }
 
-    fn add(&mut self, regm : u8){
+    fn add(&mut self, regm: u8) {
         self.cc.cy = self.a.add_carry(regm);
         self.cc.set_zspac(self.a);
     }
 
-    fn adc(&mut self, regm : u8){
+    fn adc(&mut self, regm: u8) {
         let carry1 = self.a.add_carry(self.cc.cy as u8);
         let carry2 = self.a.add_carry(regm);
         self.cc.set_zspac(self.a);

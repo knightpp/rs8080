@@ -1,5 +1,5 @@
 use crate::structs::TwoU8;
-use crate::traits::{HiPart, OverflowMath};
+use crate::traits::{OverflowMath};
 use std::ops::{AddAssign, SubAssign};
 
 fn merge(lo: u8, hi: u8) -> u16 {
