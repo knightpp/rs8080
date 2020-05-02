@@ -77,23 +77,29 @@ macro_rules! impl_ops {
             type RHS = u16;
 
             fn add_carry(&mut self, rhs: Self::RHS) -> bool {
-                let x = u16::from(*self) as u32 + rhs as u32;
-                self.set(x as u16);
-                x.get_hipart() > 0
+                let mut x = u16::from(*self);
+                let carry = x.add_carry(rhs);
+                self.set(x);
+                carry
             }
 
             fn sub_carry(&mut self, rhs: Self::RHS) -> bool {
-                let val = u16::from(*self);
-                self.set(val.wrapping_sub(rhs));
-                val < rhs
+                let mut x = u16::from(*self);
+                let carry = x.sub_carry(rhs);
+                self.set(x);
+                carry
             }
 
-            fn add_un(&mut self, _rhs: Self::RHS) {
-                unimplemented!()
+            fn add_un(&mut self, rhs: Self::RHS) {
+                let mut x = u16::from(*self);
+                x.add_un(rhs);
+                self.set(x);
             }
 
-            fn sub_un(&mut self, _rhs: Self::RHS) {
-                unimplemented!()
+            fn sub_un(&mut self, rhs: Self::RHS) {
+                let mut x = u16::from(*self);
+                x.sub_un(rhs);
+                self.set(x);
             }
         }
     };
