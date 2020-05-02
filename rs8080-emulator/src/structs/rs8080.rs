@@ -139,7 +139,7 @@ impl RS8080 {
             // INX B
             [0x03, ..] => {
                 cycles = 5.into();
-                self.bc += 1;
+                self.bc.add_un(1);
             }
             // INR B
             [0x04, ..] => {
@@ -170,7 +170,7 @@ impl RS8080 {
             // DAD B
             [0x09, ..] => {
                 cycles = 10.into();
-                self.cc.cy = self.hl.add_carry(self.bc.into());
+                self.dad(self.bc.into());
             }
             // LDAX B
             [0x0A, ..] => {
@@ -180,7 +180,7 @@ impl RS8080 {
             // DCX B
             [0x0B, ..] => {
                 cycles = 5.into();
-                self.bc -= 1;
+                self.bc.sub_un(1);
             }
             // INR C
             [0x0C, ..] => {
@@ -210,10 +210,9 @@ impl RS8080 {
             // Nop (Undocumented)
             [0x10, ..] => cycles = 4.into(),
             // LXI D,D16
-            [0x11, d16_lo, d16_hi, ..] => {
+            [0x11, lo, hi, ..] => {
                 cycles = 10.into();
-                self.de.d = d16_hi;
-                self.de.e = d16_lo;
+                self.de.set(TwoU8{lo,hi});
                 self.pc += 2;
             }
             // STAX D
@@ -224,7 +223,7 @@ impl RS8080 {
             // INX D
             [0x13, ..] => {
                 cycles = 5.into();
-                self.de += 1;
+                self.de.add_un(1);
             }
             // INR D
             [0x14, ..] => {
@@ -247,6 +246,10 @@ impl RS8080 {
             // RAL
             [0x17, ..] => {
                 cycles = 4.into();
+                // let prev_cy = self.cc.cy;
+                // self.cc.cy = self.a & 0b1000_0000 > 0;
+                // self.a = self.a << 1;
+                // self.a |= prev_cy as u8;
                 let prev_cy = self.cc.cy;
                 self.cc.cy = self.a & 0b1000_0000 > 0;
                 self.a = self.a << 1;
@@ -257,7 +260,7 @@ impl RS8080 {
             // DAD D
             [0x19, ..] => {
                 cycles = 10.into();
-                self.cc.cy = self.hl.add_carry(self.de.into());
+                self.dad(self.de.into());
             }
             // LDAX D
             [0x1A, ..] => {
@@ -267,7 +270,7 @@ impl RS8080 {
             // DCX D
             [0x1B, ..] => {
                 cycles = 5.into();
-                self.de -= 1;
+                self.de.sub_un(1);
             }
             // INR E
             [0x1C, ..] => {
@@ -290,10 +293,14 @@ impl RS8080 {
             // RAR
             [0x1F, ..] => {
                 cycles = 4.into();
+                // let prev_cy = self.cc.cy;
+                // self.cc.cy = self.a & 0b0000_0001 > 0;
+                // self.a = self.a >> 1;
+                // self.a |= (prev_cy as u8) << 7 ;
                 let prev_cy = self.cc.cy;
                 self.cc.cy = self.a & 0b0000_0001 > 0;
                 self.a = self.a >> 1;
-                self.a |= prev_cy as u8;
+                self.a |= (prev_cy as u8) << 7 ;
             }
 
             // Nop (Undocumented)
@@ -315,7 +322,7 @@ impl RS8080 {
             // INX H
             [0x23, ..] => {
                 cycles = 5.into();
-                self.hl += 1;
+                self.hl.add_un(1);
             }
             // INR H
             [0x24, ..] => {
@@ -352,7 +359,7 @@ impl RS8080 {
             // DAD H
             [0x29, ..] => {
                 cycles = 10.into();
-                self.cc.cy = self.hl.add_carry(self.hl.into());
+                self.dad(self.hl.into());
             }
             // LHLD adr
             [0x2A, lo, hi, ..] => {
@@ -365,7 +372,7 @@ impl RS8080 {
             // DCX H
             [0x2B, ..] => {
                 cycles = 5.into();
-                self.hl -= 1;
+                self.hl.sub_un(1);
             }
             // INR L
             [0x2C, ..] => {
@@ -408,7 +415,7 @@ impl RS8080 {
             // INX SP
             [0x33, ..] => {
                 cycles = 5.into();
-                self.sp = self.sp.wrapping_add(1);
+                self.sp.add_un(1);
             }
             // INR M
             [0x34, ..] => {
@@ -442,7 +449,7 @@ impl RS8080 {
             // DAD SP
             [0x39, ..] => {
                 cycles = 10.into();
-                self.cc.cy = self.hl.add_carry(self.sp);
+                self.dad(self.sp);
             }
             // LDA adr
             [0x3A, lo, hi, ..] => {
@@ -754,9 +761,9 @@ impl RS8080 {
             }
             // HLT
             [0x76, ..] => {
-                cycles = 7.into();
                 // TODO: HLT
-                todo!()
+                todo!();
+                cycles = 7.into();
             }
             // MOV M,A
             [0x77, ..] => {
@@ -807,451 +814,331 @@ impl RS8080 {
             // ADD B
             [0x80, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.add_carry(self.bc.b);
-                self.cc.set_zspac(self.a);
+                self.add(self.bc.b);
             }
             // ADD C
             [0x81, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.add_carry(self.bc.c);
-                self.cc.set_zspac(self.a);
+                self.add(self.bc.c);
             }
             // ADD D
             [0x82, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.add_carry(self.de.d);
-                self.cc.set_zspac(self.a);
+                self.add(self.de.d);
             }
             // ADD E
             [0x83, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.add_carry(self.de.e);
-                self.cc.set_zspac(self.a);
+                self.add(self.de.e);
             }
             // ADD H
             [0x84, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.add_carry(self.hl.h);
-                self.cc.set_zspac(self.a);
+                self.add(self.hl.h);
             }
             // ADD L
             [0x85, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.add_carry(self.hl.l);
-                self.cc.set_zspac(self.a);
+                self.add(self.hl.l);
             }
             // ADD M
             [0x86, ..] => {
                 cycles = 7.into();
-                self.cc.cy = self.a.add_carry(self.read_mem(self.hl));
-                self.cc.set_zspac(self.a);
+                self.add(self.read_mem(self.hl));
             }
             // ADD A
             [0x87, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.add_carry(self.a);
-                self.cc.set_zspac(self.a);
+                self.add(self.a);
             }
             // ADC B
             [0x88, ..] => {
                 cycles = 4.into();
-                let mut x = self.bc.b;
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.bc.b);
             }
             // ADC C
             [0x89, ..] => {
                 cycles = 4.into();
-                let mut x = self.bc.c;
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.bc.c);
             }
             // ADC D
             [0x8A, ..] => {
                 cycles = 4.into();
-                let mut x = self.de.d;
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.de.d);
             }
             // ADC E
             [0x8B, ..] => {
                 cycles = 4.into();
-                let mut x = self.de.e;
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.de.e);
             }
             // ADC H
             [0x8C, ..] => {
                 cycles = 4.into();
-                let mut x = self.hl.h;
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.hl.h);
             }
             // ADC L
             [0x8D, ..] => {
                 cycles = 4.into();
-                let mut x = self.hl.l;
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.hl.l);
             }
             // ADC M
             [0x8E, ..] => {
                 cycles = 7.into();
-                let mut x = self.read_mem(self.hl);
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.read_mem(self.hl));
             }
             // ADC A
             [0x8F, ..] => {
                 cycles = 4.into();
-                let mut x = self.a;
-                let carry1 = x.add_carry(self.cc.cy as u8);
-                let carry2 = self.a.add_carry(x);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.adc(self.a);
             }
 
             // SUB B
             [0x90, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.sub_carry(self.bc.b);
-                self.cc.set_zspac(self.a);
+                self.sub(self.bc.b);
             }
             // SUB C
             [0x91, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.sub_carry(self.bc.c);
-                self.cc.set_zspac(self.a);
+                self.sub(self.bc.c);
             }
             // SUB D
             [0x92, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.sub_carry(self.de.d);
-                self.cc.set_zspac(self.a);
+                self.sub(self.de.d);
             }
             // SUB E
             [0x93, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.sub_carry(self.de.e);
-                self.cc.set_zspac(self.a);
+                self.sub(self.de.e);
             }
             // SUB H
             [0x94, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.sub_carry(self.hl.h);
-                self.cc.set_zspac(self.a);
+                self.sub(self.hl.h);
             }
             // SUB L
             [0x95, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.sub_carry(self.hl.l);
-                self.cc.set_zspac(self.a);
+                self.sub(self.hl.l);
             }
             // SUB M
             [0x96, ..] => {
                 cycles = 7.into();
-                self.cc.cy = self.a.sub_carry(self.read_mem(self.hl));
-                self.cc.set_zspac(self.a);
+                self.sub(self.read_mem(self.hl));
             }
             // SUB A
             [0x97, ..] => {
                 cycles = 4.into();
-                self.cc.cy = self.a.sub_carry(self.a);
-                self.cc.set_zspac(self.a);
+                self.sub(self.a);
             }
             // SBB B
             [0x98, ..] => {
                 cycles = 4.into();
-                let carry1 = self.a.sub_carry(self.bc.b);
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.sbb(self.bc.b);
             }
             // SBB C
             [0x99, ..] => {
                 cycles = 4.into();
-                let carry1 = self.a.sub_carry(self.bc.c);
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.sbb(self.bc.c);
             }
             // SBB D
             [0x9A, ..] => {
                 cycles = 4.into();
-                let carry1 = self.a.sub_carry(self.de.d);
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                 self.sbb(self.de.d);
             }
             // SBB E
             [0x9B, ..] => {
                 cycles = 4.into();
-                let carry1 = self.a.sub_carry(self.de.e);
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.sbb(self.de.e);
             }
             // SBB H
             [0x9C, ..] => {
                 cycles = 4.into();
-                let carry1 = self.a.sub_carry(self.hl.h);
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.sbb(self.hl.h);
             }
             // SBB L
             [0x9D, ..] => {
                 cycles = 4.into();
-                let carry1 = self.a.sub_carry(self.hl.l);
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.sbb(self.hl.l);
             }
             // SBB M
             [0x9E, ..] => {
                 cycles = 7.into();
-                let carry1 = self.a.sub_carry(self.read_mem(self.hl));
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.sbb(self.read_mem(self.hl));
             }
             // SBB A
             [0x9F, ..] => {
                 cycles = 4.into();
-                let carry1 = self.a.sub_carry(self.a);
-                let carry2 = self.a.sub_carry(self.cc.cy as u8);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = carry1 | carry2;
+                self.sbb(self.a);
             }
 
             // ANA B
             [0xA0, ..] => {
                 cycles = 4.into();
-                self.a &= self.bc.b;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.bc.b);
             }
             // ANA C
             [0xA1, ..] => {
                 cycles = 4.into();
-                self.a &= self.bc.c;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.bc.c);
             }
             // ANA D
             [0xA2, ..] => {
                 cycles = 4.into();
-                self.a &= self.de.d;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.de.d);
             }
             // ANA E
             [0xA3, ..] => {
                 cycles = 4.into();
-                self.a &= self.de.e;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.de.e);
             }
             // ANA H
             [0xA4, ..] => {
                 cycles = 4.into();
-                self.a &= self.hl.h;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.hl.h);
             }
             // ANA L
             [0xA5, ..] => {
                 cycles = 4.into();
-                self.a &= self.hl.l;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.hl.l);
             }
             // ANA M
             [0xA6, ..] => {
                 cycles = 7.into();
-                self.a &= self.read_mem(self.hl);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.read_mem(self.hl));
             }
             // ANA A
             [0xA7, ..] => {
                 cycles = 4.into();
-                self.a &= self.a;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ana(self.a)
             }
             // XRA B
             [0xA8, ..] => {
                 cycles = 4.into();
-                self.a ^= self.bc.b;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.bc.b);
             }
             // XRA C
             [0xA9, ..] => {
                 cycles = 4.into();
-                self.a ^= self.bc.c;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.bc.c);
             }
             // XRA D
             [0xAA, ..] => {
                 cycles = 4.into();
-                self.a ^= self.de.d;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.de.d);
             }
             // XRA E
             [0xAB, ..] => {
                 cycles = 4.into();
-                self.a ^= self.de.e;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.de.e);
             }
             // XRA H
             [0xAC, ..] => {
                 cycles = 4.into();
-                self.a ^= self.hl.h;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.hl.h);
             }
             // XRA L
             [0xAD, ..] => {
                 cycles = 4.into();
-                self.a ^= self.hl.l;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.hl.l);
             }
             // XRA M
             [0xAE, ..] => {
                 cycles = 7.into();
-                self.a ^= self.read_mem(self.hl);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.read_mem(self.hl));
             }
             // XRA A
             [0xAF, ..] => {
                 cycles = 4.into();
-                self.a ^= self.a;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.xra(self.a);
             }
 
             // ORA B
             [0xB0, ..] => {
                 cycles = 4.into();
-                self.a |= self.bc.b;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.bc.b);
             }
             // ORA C
             [0xB1, ..] => {
                 cycles = 4.into();
-                self.a |= self.bc.c;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.bc.c);
             }
             // ORA D
             [0xB2, ..] => {
                 cycles = 4.into();
-                self.a |= self.de.d;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.de.d);
             }
             // ORA E
             [0xB3, ..] => {
                 cycles = 4.into();
-                self.a |= self.de.e;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.de.e);
             }
             // ORA H
             [0xB4, ..] => {
                 cycles = 4.into();
-                self.a |= self.hl.h;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.hl.h);
             }
             // ORA L
             [0xB5, ..] => {
                 cycles = 4.into();
-                self.a |= self.hl.l;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.hl.l);
             }
             // ORA M
             [0xB6, ..] => {
                 cycles = 7.into();
-                self.a |= self.read_mem(self.hl);
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.read_mem(self.hl));
             }
             // ORA A
             [0xB7, ..] => {
                 cycles = 4.into();
-                self.a |= self.a;
-                self.cc.set_zspac(self.a);
-                self.cc.cy = false;
+                self.ora(self.a);
             }
             // CMP B
             [0xB8, ..] => {
                 cycles = 4.into();
-                self.cc.set_cmp(self.a, self.bc.b);
+                self.cmp( self.bc.b);
             }
             // CMP C
             [0xB9, ..] => {
                 cycles = 4.into();
-                self.cc.set_cmp(self.a, self.bc.c);
+                self.cmp( self.bc.c);
             }
             // CMP D
             [0xBA, ..] => {
                 cycles = 4.into();
-                self.cc.set_cmp(self.a, self.de.d);
+                self.cmp( self.de.d);
             }
             // CMP E
             [0xBB, ..] => {
                 cycles = 4.into();
-                self.cc.set_cmp(self.a, self.de.e);
+                self.cmp( self.de.e);
             }
             // CMP H
             [0xBC, ..] => {
                 cycles = 4.into();
-                self.cc.set_cmp(self.a, self.hl.h);
+                self.cmp( self.hl.h);
             }
             // CMP L
             [0xBD, ..] => {
                 cycles = 4.into();
-                self.cc.set_cmp(self.a, self.hl.l);
+                self.cmp( self.hl.l);
             }
             // CMP M
             [0xBE, ..] => {
                 cycles = 7.into();
-                self.cc.set_cmp(self.a, self.read_mem(self.hl));
+                self.cmp( self.read_mem(self.hl));
             }
             // CMP A
             [0xBF, ..] => {
                 cycles = 4.into();
-                self.cc.set_cmp(self.a, self.a);
+                self.cmp( self.a);
             }
 
             // RNZ
             [0xC0, ..] => {
                 cycles = 5.into();
-                if self.cc.z == false {
+                if !self.cc.z{
                     cycles = 11.into();
                     self.ret();
                 }
@@ -1305,7 +1192,7 @@ impl RS8080 {
             // RZ
             [0xC8, ..] => {
                 cycles = 5.into();
-                if self.cc.z == true {
+                if self.cc.z{
                     cycles = 11.into();
                     self.ret();
                 }
@@ -1755,6 +1642,63 @@ impl RS8080 {
     pub fn generate_interrupt(&mut self, interrupt_num: u16) {
         self.int_enable = false;
         self.call(8 * interrupt_num);
+    }
+
+    pub fn call_interrupt(&mut self, call_adr : u16){
+        //self.int_enable = false;
+        self.call(call_adr);
+    }
+    
+    //fn inx(&mut self, rp : &mut)
+
+    fn dad(&mut self, rp : u16){
+        self.cc.cy = self.hl.add_carry(rp);
+    }
+
+    fn cmp(&mut self, regm : u8){
+        self.cc.set_cmp(self.a, regm);
+    }
+
+    fn ora(&mut self, regm : u8){
+        self.a |= regm;
+        self.cc.set_zspac(self.a);
+        self.cc.cy = false;
+    }
+
+    fn xra(&mut self, regm : u8){
+        self.a ^= regm;
+        self.cc.set_zspac(self.a);
+        self.cc.cy = false;
+    }
+
+    fn ana(&mut self, regm : u8){
+        self.a &= regm;
+        self.cc.set_zspac(self.a);
+        self.cc.cy = false;
+    }
+
+    fn sbb(&mut self, regm : u8){
+        let carry1 = self.a.sub_carry(regm);
+        let carry2 = self.a.sub_carry(self.cc.cy as u8);
+        self.cc.set_zspac(self.a);
+        self.cc.cy = carry1 || carry2;
+    }
+
+    fn sub(&mut self, regm : u8){
+        self.cc.cy = self.a.sub_carry(regm);
+        self.cc.set_zspac(self.a);
+    }
+
+    fn add(&mut self, regm : u8){
+        self.cc.cy = self.a.add_carry(regm);
+        self.cc.set_zspac(self.a);
+    }
+
+    fn adc(&mut self, regm : u8){
+        let carry1 = self.a.add_carry(self.cc.cy as u8);
+        let carry2 = self.a.add_carry(regm);
+        self.cc.set_zspac(self.a);
+        self.cc.cy = carry1 || carry2;
     }
 
     fn pop(&mut self) -> TwoU8 {
