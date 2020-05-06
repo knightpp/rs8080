@@ -1,7 +1,7 @@
 use crate::traits::FlagHelpers;
 use std::fmt::{self, Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 /// Represents 8 bit flag register
 pub(crate) struct ConditionalCodes {
     /// Zero flag, set when result is zero

@@ -1,5 +1,5 @@
 use crate::structs::TwoU8;
-use crate::traits::{OverflowMath};
+use crate::traits::OverflowMath;
 use std::ops::{AddAssign, SubAssign};
 
 fn merge(lo: u8, hi: u8) -> u16 {
@@ -105,17 +105,17 @@ macro_rules! impl_ops {
     };
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub(crate) struct BC {
     pub(crate) b: u8,
     pub(crate) c: u8,
 }
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub(crate) struct DE {
     pub(crate) d: u8,
     pub(crate) e: u8,
 }
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub(crate) struct HL {
     pub(crate) h: u8,
     pub(crate) l: u8,
