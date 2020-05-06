@@ -1,10 +1,15 @@
 [package]
 name = "rs8080-space-invaders"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Danil <knightpp@pm.me>"]
 edition = "2018"
+build="build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = []
+sound = ["sdl2/mixer"]
+bundlerom = []
 
 [dependencies]
 sdl2={version ="0.34.0", features = ["bundled"]}

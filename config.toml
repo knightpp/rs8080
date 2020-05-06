@@ -8,3 +8,6 @@ left_1p     = "A"
 left_2p     = "A"
 right_1p    = "D"
 right_2p    = "D"
+
+[volume]
+volume = 10 # 0 - 128

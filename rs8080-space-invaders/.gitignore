@@ -1,1 +1,4 @@
 /target
+SDL2_mixer/64/*
+SDL2_mixer/86/*
+sounds/*

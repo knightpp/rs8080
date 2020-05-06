@@ -2,4 +2,4 @@
 .vscode/
 target/
 pdfs/
-roms/
+roms/*
