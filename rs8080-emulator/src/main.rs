@@ -23,7 +23,7 @@ impl DataBus for DummyIO {
 }
 
 fn main() {
-    let mut emu = RS8080::new(Box::new(DummyIO {}));
+    let mut emu = RS8080::new(DummyIO {});
     let bin = include_bytes!("../../roms/cpudiag.bin");
 
     emu.load_to_mem(bin, 0x100);

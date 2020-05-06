@@ -7,7 +7,7 @@ use crate::ClockCycles;
 use disasm::{disassemble, Command};
 
 /// Default mem access policy, allowing all writes and reads
-pub(crate) struct AllowAll {}
+pub struct AllowAll {}
 impl MemLimiter for AllowAll {
     fn check_write(&self, _: u16, _: u8) -> WriteAction {
         WriteAction::Allow
@@ -18,7 +18,11 @@ impl MemLimiter for AllowAll {
 }
 
 /// Intel 8080
-pub struct RS8080 {
+pub struct RS8080<IO, LIM>
+where
+    IO: DataBus,
+    LIM: MemLimiter,
+{
     //registers
     a: u8,
     bc: BC,
@@ -33,11 +37,15 @@ pub struct RS8080 {
     cc: ConditionalCodes,
     /// Interrupts enabled
     int_enable: bool,
-    io_device: Box<dyn DataBus + Send + Sync>,
-    mem_limiter: Box<dyn MemLimiter + Send + Sync>,
+    io_device: IO,
+    mem_limiter: LIM,
 }
 
-impl fmt::Display for RS8080 {
+impl<IO, LIM> fmt::Display for RS8080<IO, LIM>
+where
+    IO: DataBus,
+    LIM: MemLimiter,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -57,9 +65,12 @@ impl fmt::Display for RS8080 {
     }
 }
 
-impl RS8080 {
+impl<IO> RS8080<IO, AllowAll>
+where
+    IO: DataBus,
+{
     /// Creates new emulated CPU, mem access policy is allow all
-    pub fn new(io_device: Box<dyn DataBus + Send + Sync>) -> RS8080 {
+    pub fn new(io_device: IO) -> RS8080<IO, AllowAll> {
         RS8080 {
             a: 0,
             bc: BC { b: 0, c: 0 },
@@ -68,25 +79,41 @@ impl RS8080 {
             sp: 0,
             pc: 0,
             mem: [0; 0xFFFF],
-            cc: ConditionalCodes {
-                z: false,
-                s: false,
-                p: false,
-                cy: false,
-                ac: false,
-            },
+            cc: Default::default(),
             int_enable: false,
-            io_device: io_device,
-            mem_limiter: Box::new(AllowAll {}),
+            io_device,
+            mem_limiter: AllowAll {},
+        }
+    }
+}
+
+impl<IO, LIM> RS8080<IO, LIM>
+where
+    IO: DataBus,
+    LIM: MemLimiter,
+{
+    pub fn new_with_limit(io_device: IO, mem_limiter: LIM) -> RS8080<IO, LIM> {
+        RS8080 {
+            a: 0,
+            bc: Default::default(),
+            de: Default::default(),
+            hl: Default::default(),
+            sp: 0,
+            pc: 0,
+            mem: [0; 0xFFFF],
+            cc: Default::default(),
+            int_enable: false,
+            io_device,
+            mem_limiter,
         }
     }
 
-    /// Sets new mem access policy
-    pub fn set_mem_limiter(&mut self, new_mem_limiter: Box<dyn MemLimiter + Send + Sync>) {
-        self.mem_limiter = new_mem_limiter;
-    }
+    // /// Sets new mem access policy
+    // pub fn set_mem_limiter(&mut self, new_mem_limiter: Box<dyn MemLimiter + Send>) {
+    //     self.mem_limiter = new_mem_limiter;
+    // }
 
-    pub fn get_io_mut(&mut self) -> &mut Box<dyn DataBus + Send + Sync> {
+    pub fn get_io_mut(&mut self) -> &mut IO {
         &mut self.io_device
     }
 
