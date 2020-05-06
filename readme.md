@@ -1,4 +1,3 @@
-# WIP
 Intel 8080 emulator and space invaders arcade machine.
 `rs8080-space-invaders` uses SDL2 for rendering. Binaries can be built on Linux and Windows.
 ## Build
