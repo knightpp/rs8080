@@ -1,14 +1,26 @@
 # WIP
 Intel 8080 emulator and space invaders arcade machine.
+`rs8080-space-invaders` uses SDL2 for rendering. Binaries can be built on Linux and Windows.
+## Build
+`bundlerom` feature includes rom files in a binary file.
+### With sound
+You can optionally enable 'sound' feature, but you will need [SDL_mixer](https://www.libsdl.org/projects/SDL_mixer/) development libraries (only `SDL_mixer.dll` and `SDL_mixer.lib`) to be placed in `rs8080-space-invaders/SDL2_mixer/64/` or 86 folder. Also, you will need some .wav files. Place sounds in `rs8080-space-invaders/sounds/`.
 
+```cargo r  --features "sound bundlerom"```
+
+### No sound
+
+```cargo r  --features "bundlerom"```
 ## Intel 8080 emulation TODOs
+Some things may never be implemented
+- [ ] Implement DAA and aux carry 
 - [ ] A lot of tests
 - [X] Is `cpudiag` succeeds?
 
 ## Space Invaders TODOs
 - [X] Is space invaders playable? 
 - [X] Config file, keyboard bindings for two players
-- [ ] Sounds
+- [X] Sounds
 
 ## Used resources
 - http://computerarcheology.com/Arcade/SpaceInvaders
