@@ -8,6 +8,7 @@ use std::{io::Read, ops::Deref};
 pub(crate) struct Config {
     pub(crate) controls: Controls,
     pub volume: Sound,
+    pub screen: Screen,
 }
 
 pub(crate) fn load_config(path: &str) -> Result<Config, Box<dyn std::error::Error>> {
@@ -54,6 +55,14 @@ impl Deref for Keycodee {
     }
 }
 
+#[derive(Deserialize, Copy, Clone)]
+pub struct Screen {
+    pub width: u32,
+    pub height: u32,
+    pub white_color: u8,
+    pub black_color: u8,
+    pub fullscreen: bool,
+}
 #[derive(Deserialize, Clone)]
 pub(crate) struct Controls {
     pub(crate) insert_coin: Keycodee,

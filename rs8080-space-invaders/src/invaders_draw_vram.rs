@@ -1,26 +1,23 @@
+use crate::config::Screen;
+use sdl2::rect::Rect;
 use sdl2::render::{Texture, WindowCanvas};
 
 pub(crate) fn draw_space_invaders_vram(
     canvas: &mut WindowCanvas,
     tex: &mut Texture,
     vram: &[u8],
+    screen: &Screen,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // RED GRN BL
-    const WHITE_COLOUR: u8 = 0b_000_111_00;
-    const BLACK_COLOUR: u8 = 0b_000_000_00;
-
-    assert_eq!(vram.len(), 0x1BFF); // 2400 - 3FFF, 256x224 pixels - rotated 224x256?
-                                    //let mut v = Vec::with_capacity(256*224);//[[0u8;256]; 224];
+    assert_eq!(vram.len(), 0x1BFF);
     let mut slice = [[0u8; 224]; 256];
-    //unsafe{v.set_len(256*224)};
     let mut x = 0usize;
     let mut y = 255usize;
     for byte in vram.iter() {
         for pixel in get_bitvec(*byte).iter() {
             if *pixel {
-                slice[y][x] = WHITE_COLOUR;
+                slice[y][x] = screen.white_color;
             } else {
-                slice[y][x] = BLACK_COLOUR;
+                slice[y][x] = screen.black_color;
             }
             if y == 0 {
                 x += 1;
@@ -35,7 +32,18 @@ pub(crate) fn draw_space_invaders_vram(
         buf.copy_from_slice(&t);
     })?;
     //tex.update(None, &t, 224).unwrap();
-    canvas.copy(&tex, None, None)?;
+    let canvas_size = canvas.window().size();
+    let new_width = (screen.width as f64 * canvas_size.1 as f64 / screen.height as f64) as u32;
+    canvas.copy(
+        &tex,
+        None,
+        Rect::new(
+            canvas_size.0 as i32 / 2 - new_width as i32 / 2,
+            0,
+            new_width,
+            canvas_size.1,
+        ),
+    )?;
     Ok(())
 }
 

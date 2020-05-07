@@ -3,7 +3,7 @@ extern crate sdl2;
 use emulator::{DataBus, RS8080};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::PixelFormatEnum;
+use sdl2::{pixels::PixelFormatEnum, video::FullscreenType};
 use std::fs::File;
 use std::io::Write;
 use std::ops::Deref;
@@ -70,10 +70,18 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
     let sdl_context = sdl2::init()?;
     let _audio = sdl_context.audio()?;
     let video_subsystem = sdl_context.video()?;
-    let window = video_subsystem
-        .window("rs8080-gui", 224 * 3, 256 * 3)
+    let mut window = video_subsystem
+        .window(
+            "rs8080-space-invaders",
+            config.screen.width,
+            config.screen.height,
+        )
         .position_centered()
+        .resizable()
         .build()?;
+    if config.screen.fullscreen {
+        window.set_fullscreen(FullscreenType::Desktop).unwrap();
+    }
 
     let mut canvas = window.into_canvas().build()?;
     let tc = canvas.texture_creator();
@@ -84,6 +92,12 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         let start = Instant::now();
         for event in event_pump.poll_iter() {
             match event {
+                Event::Window {
+                    win_event: sdl2::event::WindowEvent::Resized(..),
+                    ..
+                } => {
+                    canvas.clear();
+                }
                 Event::KeyDown {
                     keycode: Some(x), ..
                 } => {
@@ -163,11 +177,6 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
                 cycles_left -= cycles.0 as i32;
             }
             if emu.int_enabled() {
-                draw_space_invaders_vram(
-                    &mut canvas,
-                    &mut texture,
-                    &emu.get_mem()[0x2400..0x3FFF],
-                )?;
                 canvas.present();
                 if flipflop {
                     emu.call_interrupt(0x10);
@@ -177,6 +186,12 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
                 flipflop = !flipflop;
             }
         }
+        draw_space_invaders_vram(
+            &mut canvas,
+            &mut texture,
+            &emu.get_mem()[0x2400..0x3FFF],
+            &config.screen,
+        )?;
 
         let elapsed = start.elapsed();
         //println!("elapsed: {:?}", elapsed);
