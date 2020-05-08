@@ -5,11 +5,18 @@ Intel 8080 emulator and space invaders arcade machine.
 ### With sound
 You can optionally enable 'sound' feature, but you will need [SDL_mixer](https://www.libsdl.org/projects/SDL_mixer/) development libraries (only `SDL_mixer.dll` and `SDL_mixer.lib`) to be placed in `rs8080-space-invaders/SDL2_mixer/64/` or 86 folder. Also, you will need some .wav files. Place sounds in `rs8080-space-invaders/sounds/`.
 
-```cargo r --bin rs8080-space-invaders --features "sound bundlerom"```
+```
+git clone https://github.com/knightpp/rs8080.git
+cd ./rs8080/rs8080-space-invaders/
+cargo r --features "sound bundlerom"
+```
 
 ### No sound
-
-```cargo r --bin rs8080-space-invaders --features "bundlerom"```
+```
+git clone https://github.com/knightpp/rs8080.git
+cd ./rs8080/rs8080-space-invaders/
+cargo r --features "bundlerom"
+```
 ## Intel 8080 emulation TODOs
 Some things may never be implemented
 - [ ] Implement DAA and aux carry 
