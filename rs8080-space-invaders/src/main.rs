@@ -88,6 +88,10 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
     let mut texture = tc.create_texture_streaming(PixelFormatEnum::RGB332, 224, 256)?;
     let mut flipflop = false;
     let mut event_pump = sdl_context.event_pump()?;
+
+    //let fps = sdl_context.timer().unwrap();
+    let mut fps = 0u64;
+    let fps_start = Instant::now();
     'running: loop {
         let start = Instant::now();
         for event in event_pump.poll_iter() {
@@ -194,14 +198,15 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         )?;
 
         let elapsed = start.elapsed();
-        //println!("elapsed: {:?}", elapsed);
-        //thread::sleep(Duration::from_secs_f64(1f64 / 60f64));
+        //println!("End of frame reached after {:?} ms", elapsed.as_millis());
         if elapsed > Duration::from_secs_f64(1f64 / 60f64) {
             continue;
         }
         thread::sleep(Duration::from_secs_f64(1f64 / 60f64) - elapsed);
+        println!("fps = {}", fps as f64/fps_start.elapsed().as_secs_f64());
+        fps += 1;
     }
-
+    
     Ok(())
 }
 
