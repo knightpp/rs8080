@@ -66,10 +66,11 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         emu.load_to_mem(&f, 0x1000);
         emu.load_to_mem(&e, 0x1800);
     }
-
+    
     let sdl_context = sdl2::init()?;
     let _audio = sdl_context.audio()?;
     let video_subsystem = sdl_context.video()?;
+    
     let mut window = video_subsystem
         .window(
             "rs8080-space-invaders",
@@ -83,13 +84,21 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         window.set_fullscreen(FullscreenType::Desktop).unwrap();
     }
 
-    let mut canvas = window.into_canvas().build()?;
+    println!("DEBUG INFO");
+    dbg!(video_subsystem.num_video_displays());
+    dbg!(video_subsystem.is_screen_saver_enabled());
+    dbg!(video_subsystem.current_video_driver());
+    dbg!(video_subsystem.current_display_mode(0));
+
+    
+
+    //let mut canvas = window.into_canvas().build()?;
+    let mut canvas = window.into_canvas().present_vsync().build()?;
     let tc = canvas.texture_creator();
     let mut texture = tc.create_texture_streaming(PixelFormatEnum::RGB332, 224, 256)?;
     let mut flipflop = false;
     let mut event_pump = sdl_context.event_pump()?;
 
-    //let fps = sdl_context.timer().unwrap();
     let mut fps = 0u64;
     let fps_start = Instant::now();
     'running: loop {
@@ -181,7 +190,6 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
                 cycles_left -= cycles.0 as i32;
             }
             if emu.int_enabled() {
-                canvas.present();
                 if flipflop {
                     emu.call_interrupt(0x10);
                 } else {
@@ -196,14 +204,14 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
             &emu.get_mem()[0x2400..0x3FFF],
             &config.screen,
         )?;
-
+        canvas.present();
         let elapsed = start.elapsed();
         //println!("End of frame reached after {:?} ms", elapsed.as_millis());
-        if elapsed > Duration::from_secs_f64(1f64 / 60f64) {
-            continue;
+        if !(elapsed > Duration::from_secs_f64(1f64 / 60f64)) {
+            thread::sleep(Duration::from_secs_f64( 1f64 / 60f64) - elapsed);
         }
-        thread::sleep(Duration::from_secs_f64(1f64 / 60f64) - elapsed);
-        println!("fps = {}", fps as f64/fps_start.elapsed().as_secs_f64());
+        
+        //println!("fps = {}", fps as f64/fps_start.elapsed().as_secs_f64());
         fps += 1;
     }
     
@@ -228,11 +236,9 @@ macro_rules! handle_err {
 
 fn main() {
     let default_config = include_bytes!("../../config.default.toml");
-
     if !std::path::Path::new("config.toml").exists() {
         handle_err!(handle_err!(File::create("config.toml")).write_all(default_config));
     }
     let config = handle_err!(load_config("config.toml"));
-    //let keycodes = handle_err!(Keycodes::try_from(config.controls));
     handle_err!(run_space_invaders_machine(config));
 }
