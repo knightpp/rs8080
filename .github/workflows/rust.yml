@@ -22,7 +22,7 @@ jobs:
     - name: Upload release
       uses: yakuhzi/action-release@v1
       with:
-          file: ./release.zip
+        file: ./release.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
           
