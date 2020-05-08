@@ -10,7 +10,7 @@ right_1p    = "D"
 right_2p    = "D"
 
 [volume]
-volume = 10 # 0 - 128
+volume = 64 # 0 - 128
 
 [screen]
 width       = 672 # original game resolution multiplied by three (224 * 3)
