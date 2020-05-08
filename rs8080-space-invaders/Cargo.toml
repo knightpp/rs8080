@@ -17,6 +17,6 @@ rs8080-emulator = {path = "../rs8080-emulator"}
 toml = "0.5"
 serde = { version = "1.0", features = ["derive"] }
 
-[profile.release]
-lto = "yes"
-codegen-units = 1
+#[profile.release]
+#lto = "yes"
+#codegen-units = 1
