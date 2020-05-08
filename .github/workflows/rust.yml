@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build release
-      run: cargo build --release --verbose
+      run: cargo build --release --verbose --bin rs8080-space-invaders
     - name: Zip release
       uses: papeloto/action-zip@v1
       with:
