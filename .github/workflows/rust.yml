@@ -1,0 +1,28 @@
+name: Rust publish
+
+on:
+  push:
+    tags: 
+      - '*'
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build release
+      run: cargo build --release --verbose
+    - name: Zip release
+      uses: papeloto/action-zip@v1
+      with:
+        files: ./target/release/rs8080-space-invaders.exe ./target/release/SDL2.dll
+        dest: release.zip
+    - name: Upload release
+      uses: yakuhzi/action-release@v1
+      with:
+          file: ./release.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+          
