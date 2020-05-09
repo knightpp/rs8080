@@ -84,23 +84,14 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         window.set_fullscreen(FullscreenType::Desktop).unwrap();
     }
 
-    println!("DEBUG INFO");
-    dbg!(video_subsystem.num_video_displays());
-    dbg!(video_subsystem.is_screen_saver_enabled());
-    dbg!(video_subsystem.current_video_driver());
-    dbg!(video_subsystem.current_display_mode(0));
-
-    
-
-    //let mut canvas = window.into_canvas().build()?;
-    let mut canvas = window.into_canvas().present_vsync().build()?;
+    let mut canvas = window.into_canvas().present_vsync().accelerated().build()?;
     let tc = canvas.texture_creator();
     let mut texture = tc.create_texture_streaming(PixelFormatEnum::RGB332, 224, 256)?;
     let mut flipflop = false;
     let mut event_pump = sdl_context.event_pump()?;
 
-    let mut fps = 0u64;
-    let fps_start = Instant::now();
+    //let mut fps = 0u64;
+    //let fps_start = Instant::now();
     'running: loop {
         let start = Instant::now();
         for event in event_pump.poll_iter() {
@@ -210,9 +201,8 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         if !(elapsed > Duration::from_secs_f64(1f64 / 60f64)) {
             thread::sleep(Duration::from_secs_f64( 1f64 / 60f64) - elapsed);
         }
-        
         //println!("fps = {}", fps as f64/fps_start.elapsed().as_secs_f64());
-        fps += 1;
+        //fps += 1;
     }
     
     Ok(())
