@@ -3,4 +3,5 @@
 target/
 pdfs/
 roms/*
+!roms/readme.txt
 ./config.toml

@@ -1,0 +1,3 @@
+in this folder should be
+SDL2_mixer.dll  // x64
+SDL2_mixer.lib  // x64

@@ -1,4 +1,6 @@
 /target
 SDL2_mixer/64/*
 SDL2_mixer/86/*
+!SDL2_mixer/86/place_mixer_here.txt
+!SDL2_mixer/64/place_mixer_here.txt
 sounds/*
