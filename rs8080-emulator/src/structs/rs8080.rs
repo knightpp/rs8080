@@ -1568,7 +1568,7 @@ where
                 data |= (self.cc.z as u8) << 6;
                 data |= (self.cc.ac as u8) << 4;
                 data |= (self.cc.p as u8) << 2;
-                data |= (self.cc.cy as u8);
+                data |= self.cc.cy as u8;
                 self.push(TwoU8::new(data, self.a));
             }
             // ORI D8

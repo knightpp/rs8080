@@ -24,16 +24,9 @@ use invaders_draw_vram::draw_space_invaders_vram;
 use invaders_io::SpaceInvadersIO;
 use invaders_mem_limit::SpaceInvadersLimit;
 
-// Replace Ok with never type '!'
-fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-    let keycodes = config.controls;
-    let io = SpaceInvadersIO::new();
-    #[cfg(feature = "sound")]
-    {
-        io.get_audio().set_volume(config.volume.volume);
-    }
-    let mut emu = RS8080::new_with_limit(io, SpaceInvadersLimit {});
-
+fn setup_emulator<T: emulator::DataBus, L: emulator::MemLimiter>(
+    emu: &mut RS8080<T, L>,
+) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "bundlerom")]
     {
         let h = include_bytes!("../../roms/invaders.h");
@@ -47,7 +40,6 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
     }
     #[cfg(not(feature = "bundlerom"))]
     {
-        use std::io::ErrorKind;
         let h_err =
             std::io::Error::new(std::io::ErrorKind::Other, "cannot read './roms/invaders.h'");
         let g_err =
@@ -66,11 +58,24 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         emu.load_to_mem(&f, 0x1000);
         emu.load_to_mem(&e, 0x1800);
     }
-    
+    Ok(())
+}
+
+// Replace Ok with never type '!'
+fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+    let keycodes = config.controls;
+    let io = SpaceInvadersIO::new();
+    #[cfg(feature = "sound")]
+    {
+        io.get_audio().set_volume(config.volume.volume);
+    }
+    let mut emu = RS8080::new_with_limit(io, SpaceInvadersLimit {});
+    setup_emulator(&mut emu)?;
+
     let sdl_context = sdl2::init()?;
     let _audio = sdl_context.audio()?;
     let video_subsystem = sdl_context.video()?;
-    
+
     let mut window = video_subsystem
         .window(
             "rs8080-space-invaders",
@@ -199,12 +204,12 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         let elapsed = start.elapsed();
         //println!("End of frame reached after {:?} ms", elapsed.as_millis());
         if !(elapsed > Duration::from_secs_f64(1f64 / 60f64)) {
-            thread::sleep(Duration::from_secs_f64( 1f64 / 60f64) - elapsed);
+            thread::sleep(Duration::from_secs_f64(1f64 / 60f64) - elapsed);
         }
         //println!("fps = {}", fps as f64/fps_start.elapsed().as_secs_f64());
         //fps += 1;
     }
-    
+
     Ok(())
 }
 

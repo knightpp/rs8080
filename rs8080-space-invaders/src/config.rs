@@ -2,7 +2,7 @@ use sdl2::keyboard::Keycode;
 use serde::Deserialize;
 use std::fmt::{self, Formatter};
 use std::fs::File;
-use std::{io::Read, ops::Deref, error::Error};
+use std::{error::Error, io::Read, ops::Deref};
 
 #[derive(Deserialize)]
 pub(crate) struct Config {
@@ -15,7 +15,7 @@ pub(crate) fn load_config(path: &str) -> Result<Config, Box<dyn std::error::Erro
     let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    let config: Config = toml::from_str(&contents).map_err(|x|BrokenConfigErr(Box::new(x)))?;
+    let config: Config = toml::from_str(&contents).map_err(|x| BrokenConfigErr(Box::new(x)))?;
     Ok(config)
 }
 
@@ -96,12 +96,16 @@ impl std::fmt::Debug for ParseKeycodeErr {
 impl std::error::Error for ParseKeycodeErr {}
 
 pub(crate) struct BrokenConfigErr(Box<dyn Error>);
-impl std::fmt::Display for BrokenConfigErr{
+impl std::fmt::Display for BrokenConfigErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "failed to parse data from config.toml, try delete config.toml; inner error: {}", self.0)
+        write!(
+            f,
+            "failed to parse data from config.toml, try delete config.toml; inner error: {}",
+            self.0
+        )
     }
 }
-impl std::fmt::Debug for BrokenConfigErr{
+impl std::fmt::Debug for BrokenConfigErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", *self)
     }

@@ -1,5 +1,3 @@
-use crate::structs::rs8080::AllowAll;
-
 /// Action that happens on mem write
 pub enum WriteAction {
     /// Alow mem write
