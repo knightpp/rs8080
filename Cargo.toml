@@ -1,11 +1,7 @@
 [workspace]
-members = [
-	"rs8080-emulator",
-	"rs8080-space-invaders",
-	"rs8080-disassembler",
-
-]
+members = ["rs8080-emulator", "rs8080-space-invaders", "rs8080-disassembler"]
 
 [profile.release]
+debug = false
 #lto="yes"
-#codegen-units=1
+codegen-units = 1

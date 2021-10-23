@@ -13,9 +13,9 @@ pub(crate) fn draw_space_invaders_vram(
     let mut x = 0usize;
     let mut y = 255usize;
     tex.with_lock(None, |buf, _pitch| {
-        for byte in vram.iter() {
-            for pixel in get_bitvec(*byte).iter() {
-                if *pixel {
+        for byte in vram {
+            for pixel_emit_light in ByteBitIter::new(*byte) {
+                if pixel_emit_light {
                     buf[y * 224 + x] = screen.white_color;
                 } else {
                     buf[y * 224 + x] = screen.black_color;
@@ -34,7 +34,7 @@ pub(crate) fn draw_space_invaders_vram(
     let canvas_size = canvas.window().size();
     let new_width = (screen.width as f64 * canvas_size.1 as f64 / screen.height as f64) as u32;
     canvas.copy(
-        &tex,
+        tex,
         None,
         Rect::new(
             canvas_size.0 as i32 / 2 - new_width as i32 / 2,
@@ -46,15 +46,29 @@ pub(crate) fn draw_space_invaders_vram(
     Ok(())
 }
 
-fn get_bitvec(byte: u8) -> [bool; 8] {
-    let mut bitvec = [false; 8];
-    bitvec[0] = byte & 0b0000_0001 > 0;
-    bitvec[1] = byte & 0b0000_0010 > 0;
-    bitvec[2] = byte & 0b0000_0100 > 0;
-    bitvec[3] = byte & 0b0000_1000 > 0;
-    bitvec[4] = byte & 0b0001_0000 > 0;
-    bitvec[5] = byte & 0b0010_0000 > 0;
-    bitvec[6] = byte & 0b0100_0000 > 0;
-    bitvec[7] = byte & 0b1000_0000 > 0;
-    bitvec
+struct ByteBitIter {
+    byte: u8,
+    next_bit_pos: u8,
+}
+impl ByteBitIter {
+    fn new(byte: u8) -> Self {
+        ByteBitIter {
+            byte,
+            next_bit_pos: 0,
+        }
+    }
+}
+
+impl Iterator for ByteBitIter {
+    type Item = bool;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next_bit_pos < 8 {
+            let current_bit_pos = self.next_bit_pos;
+            self.next_bit_pos += 1;
+            Some(self.byte & (1 << current_bit_pos) > 0)
+        } else {
+            None
+        }
+    }
 }

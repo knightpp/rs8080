@@ -2,8 +2,8 @@
 name = "rs8080-space-invaders"
 version = "1.1.0"
 authors = ["Danil <knightpp@pm.me>"]
-edition = "2018"
-build="build.rs"
+edition = "2021"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
@@ -12,8 +12,8 @@ sound = ["sdl2/mixer"]
 bundlerom = []
 
 [dependencies]
-sdl2={version ="0.34.0", features = ["bundled"]}
-rs8080-emulator = {path = "../rs8080-emulator"}
+sdl2 = { version = "0.35.0", features = ["bundled"] }
+rs8080-emulator = { path = "../rs8080-emulator" }
 toml = "0.5"
 serde = { version = "1.0", features = ["derive"] }
 

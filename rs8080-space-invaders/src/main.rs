@@ -203,11 +203,11 @@ fn run_space_invaders_machine(config: Config) -> Result<(), Box<dyn std::error::
         canvas.present();
         let elapsed = start.elapsed();
         //println!("End of frame reached after {:?} ms", elapsed.as_millis());
-        if !(elapsed > Duration::from_secs_f64(1f64 / 60f64)) {
+        if elapsed <= Duration::from_secs_f64(1f64 / 60f64) {
             thread::sleep(Duration::from_secs_f64(1f64 / 60f64) - elapsed);
         }
-        //println!("fps = {}", fps as f64/fps_start.elapsed().as_secs_f64());
-        //fps += 1;
+        // println!("fps = {}", fps as f64 / fps_start.elapsed().as_secs_f64());
+        // fps += 1;
     }
 
     Ok(())

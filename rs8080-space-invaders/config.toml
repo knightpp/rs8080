@@ -11,3 +11,11 @@ right_2p    = "D"
 
 [volume]
 volume = 10 # 0 - 128
+
+[screen]
+width       = 672 # original game resolution multiplied by three (224 * 3)
+height      = 768 # 256 * 3
+black_color = 0
+# Format RGB332 (000_111_00 or 28 = very green)
+white_color = 28
+fullscreen  = false

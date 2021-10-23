@@ -11,4 +11,10 @@ extern crate derive_more;
 use derive_more::{Add, Display, From};
 
 #[derive(Add, Display, From)]
-pub struct ClockCycles(pub u8);
+pub struct ClockCycles(pub u32);
+
+impl ClockCycles {
+    pub(crate) fn add(&mut self, cycles: u32) {
+        self.0 += cycles;
+    }
+}
