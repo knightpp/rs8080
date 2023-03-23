@@ -8,8 +8,8 @@ edition = "2021"
 
 [dependencies]
 hex-literal = "0.3"
-strum = "0.22"
-strum_macros = "0.22"
+strum = "0.24"
+strum_macros = "0.24"
 
 #[profile.release]
 #codegen-units = 1

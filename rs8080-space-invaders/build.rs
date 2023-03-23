@@ -4,7 +4,6 @@ fn main() {
         use std::env::var;
         use std::fs;
         use std::path::PathBuf;
-        let target_dir = find_cargo_target_dir();
         let manifest_dir = PathBuf::from(var("CARGO_MANIFEST_DIR").unwrap());
 
         // I copied this function from `sdl2-sys` build script.
