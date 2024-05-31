@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 members = ["rs8080-emulator", "rs8080-space-invaders", "rs8080-disassembler"]
 
 [profile.release]

@@ -12,9 +12,9 @@ sound = ["sdl2/mixer"]
 bundlerom = []
 
 [dependencies]
-sdl2 = { version = "0.35.0", features = ["bundled"] }
+sdl2 = { version = "0.36.0", features = ["bundled"] }
 rs8080-emulator = { path = "../rs8080-emulator" }
-toml = "0.7"
+toml = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 
 #[profile.release]

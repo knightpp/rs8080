@@ -7,9 +7,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hex-literal = "0.3"
-strum = "0.24"
-strum_macros = "0.24"
+hex-literal = "0.4"
+strum = "0.26"
+strum_macros = "0.26"
 
 #[profile.release]
 #codegen-units = 1
